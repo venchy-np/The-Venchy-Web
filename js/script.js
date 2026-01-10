@@ -411,11 +411,21 @@ navProjects.addEventListener('click', () => { switchView('home'); });
 // ---------------------------
 const menuToggle = document.querySelector('.menu-toggle');
 const navLinks = document.querySelector('.nav-links');
+const notesContainer = document.getElementById('notes-container');
 
 if (menuToggle && navLinks) {
     menuToggle.addEventListener('click', () => {
         menuToggle.classList.toggle('open');
         navLinks.classList.toggle('active');
+
+        // Toggle notes visibility
+        if (notesContainer) {
+            if (navLinks.classList.contains('active')) {
+                notesContainer.classList.add('hidden');
+            } else {
+                notesContainer.classList.remove('hidden');
+            }
+        }
     });
 
     // Close menu when a link is clicked
@@ -424,6 +434,9 @@ if (menuToggle && navLinks) {
         link.addEventListener('click', () => {
             menuToggle.classList.remove('open');
             navLinks.classList.remove('active');
+
+            // Show notes again
+            if (notesContainer) notesContainer.classList.remove('hidden');
         });
     });
 }

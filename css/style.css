@@ -968,7 +968,8 @@ main {
     justify-content: space-between;
     width: 30px;
     height: 21px;
-    z-index: 9999; /* High Z-index */
+    z-index: 9999;
+    /* High Z-index */
 }
 
 .menu-toggle span {
@@ -998,53 +999,102 @@ main {
         padding: 15px 20px;
     }
 
-    .menu-toggle {
+    /* Navbar Layout for Mobile */
+    .navbar {
         display: flex;
-    }
-
-    .nav-links {
-        position: fixed;
-        top: 0;
-        right: -100%; /* Hidden off-screen */
-        width: 100%;
-        height: 100vh;
-        background: rgba(5, 5, 5, 0.98); /* Almost opaque */
-        backdrop-filter: blur(20px);
-        flex-direction: column;
-        justify-content: center;
         align-items: center;
-        gap: 40px;
-        transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1);
-        z-index: 5000;
-        margin: 0;
-        padding: 0;
-    }
-
-    .nav-links.active {
-        right: 0;
-    }
-    
-    .nav-links a {
-        font-size: 1.5rem;
-    }
-
-    /* Move socials into the menu or hide/adjust them */
-    .nav-socials {
-        display: none; /* Simplification for mobile */
+        /* No justify-content: space-between because of absolute nav-links */
     }
 
     .logo {
-        z-index: 6000; /* Keep logo visible */
+        z-index: 101;
+        /* Above menu */
+        flex-grow: 1;
+        /* Pushes socials to right */
     }
 
-    /* Adjust Main Content Margins */
+    .nav-socials {
+        display: flex;
+        /* Show socials */
+        align-items: center;
+        gap: 8px;
+        margin-left: 0;
+        margin-right: 15px;
+        /* Space between socials and hamburger */
+    }
+
+    .nav-social-link {
+        padding: 6px;
+    }
+
+    .nav-social-link span {
+        display: none;
+        /* Hide text, show icons only */
+    }
+
+    .nav-login-btn {
+        margin-left: 5px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
+    }
+
+    /* Hamburger */
+    .menu-toggle {
+        display: flex;
+        order: 3;
+        /* Last */
+    }
+
+    /* Dropdown Bar Menu */
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--glass-border);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 20px;
+        padding: 30px 0;
+
+        /* Transition */
+        opacity: 0;
+        transform: translateY(-20px);
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        z-index: 100;
+
+        /* Override previous fixed styles */
+        right: auto;
+    }
+
+    .nav-links.active {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    .nav-links a {
+        font-size: 1.1rem;
+        width: 100%;
+        text-align: center;
+        display: block;
+        padding: 5px 0;
+    }
+
+    /* Adjust Main for fixed header */
     main {
         padding: 15px;
         margin-top: 80px;
     }
 
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
 
     /* Chat Widget Mobile Adjustments */
@@ -1059,7 +1109,7 @@ main {
     .widget-screen {
         height: 70vh;
     }
-    
+
     /* Ensure modal fits on mobile */
     .modal-content {
         width: 95%;
@@ -1072,16 +1122,16 @@ main {
         top: 0;
         left: 0;
         width: 100%;
-        align-items: center; 
-        margin-bottom: 30px;
+        align-items: center;
+        margin-bottom: 20px;
         max-width: 100%;
     }
-    
+
     .admin-note-controls {
         width: 100%;
         justify-content: center;
     }
-    
+
     .admin-note-controls input {
         width: 60%;
     }
