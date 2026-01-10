@@ -407,6 +407,29 @@ navProjects.addEventListener('click', () => { switchView('home'); });
 
 
 // ---------------------------
+// Mobile Menu Toggle
+// ---------------------------
+const menuToggle = document.querySelector('.menu-toggle');
+const navLinks = document.querySelector('.nav-links');
+
+if (menuToggle && navLinks) {
+    menuToggle.addEventListener('click', () => {
+        menuToggle.classList.toggle('open');
+        navLinks.classList.toggle('active');
+    });
+
+    // Close menu when a link is clicked
+    const links = navLinks.querySelectorAll('a');
+    links.forEach(link => {
+        link.addEventListener('click', () => {
+            menuToggle.classList.remove('open');
+            navLinks.classList.remove('active');
+        });
+    });
+}
+
+
+// ---------------------------
 // About Section (Dynamic + Admin)
 // ---------------------------
 const aboutContent = document.getElementById('about-content');
