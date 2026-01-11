@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="../img/webicon.jfif" type="image/jpeg">
+    <title>Games | Sajan Portfolio</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--accent-magenta-dim);
+            border: 1px solid var(--accent-magenta);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-magenta);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-gradient"></div>
+
+    <header class="glass-header">
+        <nav class="navbar">
+            <div class="logo">Sajan.</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="#" class="active">Games</a></li>
+                <li><a href="../index.html#projects-grid">Projects</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1 class="fade-in">Games Zone.</h1>
+            <p class="fade-in delay-1">A collection of interactive experiences and experiments.</p>
+        </section>
+
+        <section class="games-grid">
+            <!-- Placeholder Game Card -->
+            <div class="card fade-in delay-2">
+                <div class="card-icon">🎮</div>
+                <div class="card-content">
+                    <span class="coming-soon-badge">Coming Soon</span>
+                    <h3>Retro Adventure</h3>
+                    <p>A classic pixel-art adventure built with JavaScript and Canvas.</p>
+                </div>
+                <a href="#" class="card-link">Play Now</a>
+            </div>
+
+            <div class="card fade-in delay-2">
+                <div class="card-icon">🎲</div>
+                <div class="card-content">
+                    <span class="coming-soon-badge">Planned</span>
+                    <h3>Logic Puzzles</h3>
+                    <p>Challenge your brain with these interactive logic and math puzzles.</p>
+                </div>
+                <a href="#" class="card-link">View Details</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>Built with ❤️ and AI.</p>
+        <p class="copyright">© 2026 Sajan.</p>
+    </footer>
+
+    <script type="module" src="../js/script.js"></script>
+</body>
+
+</html>
