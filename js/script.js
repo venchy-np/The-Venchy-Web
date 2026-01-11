@@ -400,10 +400,24 @@ function switchView(viewName) {
     }
 }
 
-navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
-navAbout.addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
+if (navHome) navHome.addEventListener('click', (e) => {
+    if (homeView && aboutView) {
+        e.preventDefault();
+        switchView('home');
+    }
+});
+if (navAbout) navAbout.addEventListener('click', (e) => {
+    if (homeView && aboutView) {
+        e.preventDefault();
+        switchView('about');
+    }
+});
 // Ensure clicking "Projects" also shows home
-navProjects.addEventListener('click', () => { switchView('home'); });
+if (navProjects) navProjects.addEventListener('click', () => {
+    if (homeView && aboutView) {
+        switchView('home');
+    }
+});
 
 
 // ---------------------------
