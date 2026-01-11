@@ -196,8 +196,6 @@ function setupAdminListener() {
 }
 
 // Auth State
-// Auth State
-// Auth State
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         // --- User is Signed In ---

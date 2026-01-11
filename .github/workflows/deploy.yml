@@ -28,6 +28,10 @@ jobs:
           cat <<'EOF' > js/firebase-config.js
           ${{ secrets.FIREBASE_CONFIG }}
           EOF
+          if [ ! -s js/firebase-config.js ]; then
+            echo "::error::Secret FIREBASE_CONFIG is empty or missing! Deployment aborted."
+            exit 1
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
