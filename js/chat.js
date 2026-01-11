@@ -205,8 +205,8 @@ onAuthStateChanged(auth, async (user) => {
         console.log("User logged in:", user.uid);
 
         // 1. Immediate UI Updates
-        authScreen.classList.add('hidden');
-        chatScreen.classList.remove('hidden');
+        if (authScreen) authScreen.classList.add('hidden');
+        if (chatScreen) chatScreen.classList.remove('hidden');
 
         // Calculate name for UI immediately
         let uiName = user.displayName;
@@ -218,22 +218,25 @@ onAuthStateChanged(auth, async (user) => {
             navLoginBtn.innerHTML = `${getAvatar(uiName)} ${uiName}`;
             navLoginBtn.onclick = (e) => {
                 e.stopPropagation();
-                navDropdown.classList.toggle('hidden');
+                if (navDropdown) navDropdown.classList.toggle('hidden');
+                else window.location.href = "../index.html"; // Fallback if dropdown missing
             };
         }
 
         // 2. Setup Listeners
         const chatId = user.uid;
-        setupChatListener(chatId);
+        if (messagesContainer) setupChatListener(chatId);
 
         // If Admin, setup admin listener
         if (user.email === ADMIN_EMAIL) {
             if (navChatTrigger) navChatTrigger.textContent = "Admin Chat";
-            btnAdminList.classList.remove('hidden');
-            setupAdminListener();
+            if (btnAdminList) {
+                btnAdminList.classList.remove('hidden');
+                setupAdminListener();
+            }
         } else {
             if (navChatTrigger) navChatTrigger.textContent = "Chat with me";
-            btnAdminList.classList.add('hidden');
+            if (btnAdminList) btnAdminList.classList.add('hidden');
         }
 
         // 3. Background: Save user to Firestore (Non-blocking)
@@ -248,27 +251,31 @@ onAuthStateChanged(auth, async (user) => {
         currentUser = null;
         console.log("No user logged in");
 
-        authScreen.classList.remove('hidden');
-        chatScreen.classList.add('hidden');
+        if (authScreen) authScreen.classList.remove('hidden');
+        if (chatScreen) chatScreen.classList.add('hidden');
 
         // Update Nav Button (Reset to Login)
         if (navLoginBtn) {
             navLoginBtn.textContent = "Login";
             navLoginBtn.onclick = () => {
-                toggleChat(true); // Open widget to show auth screen
+                if (chatWidget) toggleChat(true); // Open widget to show auth screen
+                else window.location.href = "../index.html"; // Redirect to home for login
             };
         }
         if (navDropdown) navDropdown.classList.add('hidden');
 
         // Hide admin specific elements
-        btnAdminList.classList.add('hidden');
+        if (btnAdminList) btnAdminList.classList.add('hidden');
         if (navChatTrigger) navChatTrigger.textContent = "Chat with me";
 
         // Clear chat state
         if (unsubscribeMessages) unsubscribeMessages();
-        messagesContainer.innerHTML = '';
-        currentChatId = null;
-        document.querySelector('.chat-widget-header h3').innerText = "Chat with me";
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '';
+            currentChatId = null;
+        }
+        const headerH3 = document.querySelector('.chat-widget-header h3');
+        if (headerH3) headerH3.innerText = "Chat with me";
     }
 });
 
