@@ -60,27 +60,27 @@ function toggleChat(show) {
     }
 }
 
-chatFab.addEventListener('click', () => toggleChat(!chatWidget.classList.contains('hidden') ? false : true));
-closeChat.addEventListener('click', () => toggleChat(false));
+if (chatFab) chatFab.addEventListener('click', () => toggleChat(!chatWidget.classList.contains('hidden') ? false : true));
+if (closeChat) closeChat.addEventListener('click', () => toggleChat(false));
 if (navChatTrigger) navChatTrigger.addEventListener('click', (e) => {
     e.preventDefault();
     toggleChat(true);
 });
 
 // Admin Sidebar Toggle
-btnAdminList.addEventListener('click', () => {
-    adminSidebar.classList.remove('hidden');
+if (btnAdminList) btnAdminList.addEventListener('click', () => {
+    if (adminSidebar) adminSidebar.classList.remove('hidden');
     loadAllConversations();
 });
-closeSidebar.addEventListener('click', () => adminSidebar.classList.add('hidden'));
+if (closeSidebar) closeSidebar.addEventListener('click', () => adminSidebar.classList.add('hidden'));
 
 // Auth Handlers (Google, Guest, Email)
-btnGoogle.addEventListener('click', async () => {
+if (btnGoogle) btnGoogle.addEventListener('click', async () => {
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
     catch (e) { alert(e.message); }
 });
 
-btnGuest.addEventListener('click', async () => {
+if (btnGuest) btnGuest.addEventListener('click', async () => {
     try { await signInAnonymously(auth); }
     catch (e) { console.error(e); }
 });
@@ -104,7 +104,7 @@ if (loginForm) {
 // Remove old click listener for btnEmailLogin if it exists to avoid double firing (though type=submit handles it via form)
 // btnEmailLogin.addEventListener('click', ... ) <- Removed
 
-btnEmailSignup.addEventListener('click', async () => {
+if (btnEmailSignup) btnEmailSignup.addEventListener('click', async () => {
     const email = emailInput.value;
     const password = passwordInput.value;
     const name = displayNameInput.value.trim();
@@ -132,7 +132,7 @@ btnEmailSignup.addEventListener('click', async () => {
     catch (e) { alert(e.message); }
 });
 
-btnLogout.addEventListener('click', () => signOut(auth));
+if (btnLogout) btnLogout.addEventListener('click', () => signOut(auth));
 
 const navLoginBtn = document.getElementById('nav-login-btn');
 const navDropdown = document.getElementById('nav-user-dropdown');
@@ -154,7 +154,7 @@ if (navLogoutBtn) {
 // Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
     if (navDropdown && !navDropdown.classList.contains('hidden')) {
-        if (!navLoginBtn.contains(e.target) && !navDropdown.contains(e.target)) {
+        if (navLoginBtn && !navLoginBtn.contains(e.target) && !navDropdown.contains(e.target)) {
             navDropdown.classList.add('hidden');
         }
     }
@@ -285,7 +285,7 @@ function getAvatar(name) {
 }
 
 // Sending
-messageForm.addEventListener('submit', async (e) => {
+if (messageForm) messageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = messageInput.value.trim();
     if (!text) return;
