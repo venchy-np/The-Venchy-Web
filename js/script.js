@@ -58,7 +58,12 @@ onAuthStateChanged(auth, (user) => {
     loadThoughts();
     renderProjects();
     // About section is loaded on view switch, but we can refresh it if valid
-    if (typeof loadAboutSections !== 'undefined' && !document.getElementById('about-view').classList.contains('hidden')) loadAboutSections();
+    if (typeof loadAboutSections !== 'undefined') {
+        const aView = document.getElementById('about-view');
+        if (aView && !aView.classList.contains('hidden')) {
+            loadAboutSections();
+        }
+    }
 });
 
 // Render Projects (Fetch from Firestore)
@@ -184,11 +189,11 @@ if (modalCancelBtn) {
     modalCancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
 }
 
-radioEmoji.addEventListener('change', () => toggleIconInput('emoji'));
-radioImage.addEventListener('change', () => toggleIconInput('image'));
+if (radioEmoji) radioEmoji.addEventListener('change', () => toggleIconInput('emoji'));
+if (radioImage) radioImage.addEventListener('change', () => toggleIconInput('image'));
 
 // File Handling
-modalFile.addEventListener('change', function (e) {
+if (modalFile) modalFile.addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -209,7 +214,7 @@ modalFile.addEventListener('change', function (e) {
 
 
 // Save Logic
-modalSaveBtn.addEventListener('click', async () => {
+if (modalSaveBtn) modalSaveBtn.addEventListener('click', async () => {
     const id = document.getElementById('modal-project-id').value;
     const title = document.getElementById('modal-title').value.trim();
     const desc = document.getElementById('modal-desc').value.trim();
@@ -471,7 +476,7 @@ onAuthStateChanged(auth, (user) => {
         addSectionBtn.classList.add('hidden');
     }
     // Refresh about if visible to update buttons
-    if (!aboutView.classList.contains('hidden')) loadAboutSections();
+    if (aboutView && !aboutView.classList.contains('hidden')) loadAboutSections();
 });
 
 // Load Sections
