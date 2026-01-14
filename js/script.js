@@ -424,6 +424,26 @@ if (navProjects) navProjects.addEventListener('click', () => {
     }
 });
 
+// Footer Navigation Links
+const footerAboutLink = document.getElementById('footer-about-link');
+if (footerAboutLink) footerAboutLink.addEventListener('click', (e) => {
+    if (homeView && aboutView) {
+        e.preventDefault();
+        switchView('about');
+    }
+});
+
+document.querySelectorAll('.footer-section.links a').forEach(link => {
+    const href = link.getAttribute('href');
+    if (href === '#home-view' || href === '#projects-grid') {
+        link.addEventListener('click', () => {
+            if (homeView && aboutView) {
+                switchView('home');
+            }
+        });
+    }
+});
+
 
 // ---------------------------
 // Mobile Menu Toggle

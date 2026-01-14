@@ -67,6 +67,14 @@ if (navChatTrigger) navChatTrigger.addEventListener('click', (e) => {
     toggleChat(true);
 });
 
+// Footer Chat Triggers
+document.querySelectorAll('.footer-chat-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleChat(true);
+    });
+});
+
 // Admin Sidebar Toggle
 if (btnAdminList) btnAdminList.addEventListener('click', () => {
     if (adminSidebar) adminSidebar.classList.remove('hidden');
