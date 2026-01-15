@@ -1069,19 +1069,19 @@ main {
 
     .logo {
         z-index: 101;
-        /* Above menu */
         flex-grow: 1;
-        /* Pushes socials to right */
+        font-size: 1.2rem;
+        /* Slighly smaller logo on mobile */
     }
 
     .nav-socials {
         display: flex;
-        /* Show socials */
         align-items: center;
-        gap: 8px;
+        gap: 5px;
+        /* Reduced gap for smaller screens */
         margin-left: 0;
-        margin-right: 15px;
-        /* Space between socials and hamburger */
+        margin-right: 10px;
+        /* Reduced margin */
     }
 
     .nav-social-link {
@@ -1094,9 +1094,12 @@ main {
     }
 
     .nav-login-btn {
-        margin-left: 5px;
-        padding: 4px 10px;
-        font-size: 0.8rem;
+        margin-left: 2px;
+        /* Reduced margin */
+        padding: 4px 8px;
+        /* Slightly tighter padding */
+        font-size: 0.75rem;
+        /* Smaller font */
     }
 
     /* Hamburger */
