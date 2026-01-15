@@ -44,6 +44,18 @@
             color: var(--accent-magenta);
             margin-bottom: 10px;
         }
+
+        .spotify-container {
+            max-width: 400px;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .spotify-container {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -110,6 +122,15 @@
             <h1 class="fade-in">Fun Zone.</h1>
             <p class="fade-in delay-1">A collection of interactive experiences and experiments.</p>
         </section>
+
+        <!-- Spotify Embed -->
+        <div class="spotify-container fade-in delay-1">
+            <iframe data-testid="embed-iframe" style="border-radius:12px"
+                src="https://open.spotify.com/embed/playlist/477FKjrcDcFh6rRRHFhcW7?utm_source=generator&theme=0"
+                width="100%" height="152" frameBorder="0" allowfullscreen=""
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"></iframe>
+        </div>
 
         <section class="fun-grid">
             <!-- Placeholder Game Card -->
