@@ -31,25 +31,34 @@ let currentUser = null;
 let currentChatId = null;
 let unsubscribeMessages = null;
 
+let globalUnreadCount = 0;
+
+function updateBadge() {
+    if (!currentUser) return;
+    
+    if (globalUnreadCount > 0 && chatWidget.classList.contains('hidden')) {
+        chatFab.classList.add('has-new');
+        chatFab.setAttribute('data-count', globalUnreadCount > 9 ? '9+' : globalUnreadCount);
+    } else {
+        chatFab.classList.remove('has-new');
+        chatFab.removeAttribute('data-count');
+    }
+}
+
 // Toggle Widget
 function toggleChat(show) {
     if (show) {
         chatWidget.classList.remove('hidden');
         scrollToBottom();
 
-        // Clear Unread Counts on Open
-        if (currentUser) {
-            chatFab.classList.remove('has-new');
-            chatFab.removeAttribute('data-count');
-
-            if (currentUser.email !== ADMIN_EMAIL) {
-                // User opening: Clear their own unread count globally in DB
-                setDoc(doc(db, "chats", currentUser.uid), { unreadCountUser: 0 }, { merge: true });
-            }
+        if (currentUser && currentUser.email !== ADMIN_EMAIL) {
+            // User opening: Clear their own unread count globally in DB
+            setDoc(doc(db, "chats", currentUser.uid), { unreadCountUser: 0 }, { merge: true });
         }
     } else {
         chatWidget.classList.add('hidden');
     }
+    updateBadge(); // Evaluate badge based on new hidden state
 }
 
 if (chatFab) chatFab.addEventListener('click', () => toggleChat(!chatWidget.classList.contains('hidden') ? false : true));
@@ -239,13 +248,8 @@ onAuthStateChanged(auth, async (user) => {
                     if (docSnap.data().hasUnread) unreadChats++;
                 });
                 
-                if (unreadChats > 0 && chatWidget.classList.contains('hidden')) {
-                    chatFab.classList.add('has-new');
-                    chatFab.setAttribute('data-count', unreadChats > 9 ? '9+' : unreadChats);
-                } else if (unreadChats === 0) {
-                    chatFab.classList.remove('has-new');
-                    chatFab.removeAttribute('data-count');
-                }
+                globalUnreadCount = unreadChats;
+                updateBadge();
             });
         } else {
             if (navChatTrigger) navChatTrigger.textContent = "Chat with me";
@@ -255,17 +259,15 @@ onAuthStateChanged(auth, async (user) => {
             onSnapshot(doc(db, "chats", user.uid), (docSnap) => {
                 const data = docSnap.data();
                 if (data && data.unreadCountUser > 0) {
-                    if (chatWidget.classList.contains('hidden')) {
-                        chatFab.classList.add('has-new');
-                        chatFab.setAttribute('data-count', data.unreadCountUser > 9 ? '9+' : data.unreadCountUser);
-                    } else {
+                    globalUnreadCount = data.unreadCountUser;
+                    if (!chatWidget.classList.contains('hidden')) {
                         // User has widget open, clear instantly
                         setDoc(doc(db, "chats", user.uid), { unreadCountUser: 0 }, { merge: true });
                     }
                 } else {
-                    chatFab.classList.remove('has-new');
-                    chatFab.removeAttribute('data-count');
+                    globalUnreadCount = 0;
                 }
+                updateBadge();
             });
         }
 
@@ -279,6 +281,8 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         // --- User is Signed Out ---
         currentUser = null;
+        globalUnreadCount = 0;
+        updateBadge();
         console.log("No user logged in");
 
         if (authScreen) authScreen.classList.remove('hidden');

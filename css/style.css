@@ -747,10 +747,6 @@ main {
 
 
 /* Notification Badge on FAB */
-.chat-fab.has-new {
-    position: relative;
-}
-
 .chat-fab.has-new::after {
     content: attr(data-count);
     position: absolute;
