@@ -22,13 +22,8 @@ onAuthStateChanged(auth, (user) => {
     if (editTypewriterBtn) editTypewriterBtn.classList.toggle('hidden', !isAdmin);
 
     // Refresh Data
-    loadThoughts();
     renderProjects();
-    // Refresh about if current view
-    const aboutView = document.getElementById('about-view');
-    if (aboutView && !aboutView.classList.contains('hidden')) {
-        loadAboutSections();
-    }
+    loadThoughts();
 });
 
 // ---------------------------
@@ -39,6 +34,7 @@ function renderProjects() {
     if (!grid) return;
     const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
 
+    console.log("Fetching projects...");
     onSnapshot(q, (snapshot) => {
         grid.innerHTML = '';
         if (snapshot.empty) {
@@ -48,7 +44,7 @@ function renderProjects() {
         snapshot.forEach((docSnap) => renderProjectCard(docSnap.id, docSnap.data()));
     }, (error) => {
         console.error("Projects Load Error:", error);
-        grid.innerHTML = `<p style="text-align:center; width:100%; color:#ff453a;">Failed to load content.</p>`;
+        grid.innerHTML = `<p style="text-align:center; width:100%; color:#ff453a;">Failed to load projects. (Database Error)</p>`;
     });
 }
 
@@ -95,38 +91,40 @@ function renderProjectCard(id, data) {
 }
 
 // ---------------------------
-// Typewriter Effect (With Dynamic Sync)
+// Typewriter Effect (Improved Robustness)
 // ---------------------------
-let phrases = ["Learning around...", "I just love listening to music🎶", "I will code greatness someday ✨"];
+let defaultPhrases = ["Learning around...", "I just love listening to music🎶", "I will code greatness someday ✨"];
+let phrases = [...defaultPhrases];
 let phraseIndex = 0;
 let charIndex = 0;
 let isDeleting = false;
-let typewriterActive = false;
+let typewriterStarted = false;
 
-// Sync Phrases from Firestore
+// Start Typewriter IMMEDIATELY
+function startTypewriterOnce() {
+    if (typewriterStarted) return;
+    typewriterStarted = true;
+    setTimeout(typeWriter, 1000);
+}
+
+// Initialize on Load
+startTypewriterOnce();
+
+// Sync from DB in background
 onSnapshot(doc(db, "settings", "typewriter"), (docSnap) => {
     if (docSnap.exists() && docSnap.data().phrases && docSnap.data().phrases.length > 0) {
         phrases = docSnap.data().phrases;
-        console.log("Typewriter Phrases Updated:", phrases);
-    }
-    // Start typewriter if not running
-    if (!typewriterActive) {
-        typewriterActive = true;
-        setTimeout(typeWriter, 1000);
+        console.log("✅ Typewriter Phrases Synced from DB");
     }
 }, (err) => {
-    console.warn("Using fallback phrases. Firestore Load Error:", err);
-    if (!typewriterActive) {
-        typewriterActive = true;
-        setTimeout(typeWriter, 1000);
-    }
+    console.warn("⚠️ Firestore phrases blocked. Using defaults.", err);
 });
 
 function typeWriter() {
     const textDisplay = document.querySelector('.typewriter-text');
     if (!textDisplay) return;
 
-    const currentPhrase = phrases[phraseIndex] || "...";
+    const currentPhrase = phrases[phraseIndex] || defaultPhrases[0];
     
     if (isDeleting) {
         textDisplay.innerHTML = currentPhrase.substring(0, charIndex - 1);
@@ -157,15 +155,12 @@ async function fetchDiscordStatus() {
         const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
         if (!response.ok) return;
         const { data } = await response.json();
-        
         const dot = document.getElementById('discord-status-dot');
         const text = document.getElementById('discord-status-text');
         if (!dot || !text) return;
-        
         dot.className = 'status-dot ' + data.discord_status;
         let statusMsg = data.discord_status.charAt(0).toUpperCase() + data.discord_status.slice(1);
         if (data.discord_status === 'dnd') statusMsg = 'Do Not Disturb';
-        
         let isHTML = false;
         if (data.activities && data.activities.length > 0) {
             const playing = data.activities.find(a => a.type === 0);
@@ -182,7 +177,6 @@ async function fetchDiscordStatus() {
                 isHTML = song.length > 14;
             }
         }
-        
         if (isHTML) text.innerHTML = statusMsg;
         else text.innerText = statusMsg;
         text.classList.remove('hidden');
@@ -217,31 +211,32 @@ window.deleteThought = async (id) => {
 };
 
 // ---------------------------
-// Project Admin
+// Admin Modals
 // ---------------------------
 const modal = document.getElementById('project-modal');
-const modalFile = document.getElementById('modal-file');
-const imagePreview = document.getElementById('image-preview');
-const radioEmoji = document.querySelector('input[name="icon-type"][value="emoji"]');
-const radioImage = document.querySelector('input[name="icon-type"][value="image"]');
-const emojiGroup = document.getElementById('emoji-input-group');
-const imageGroup = document.getElementById('image-input-group');
-let currentBase64 = null;
+const typewriterModal = document.getElementById('typewriter-modal');
+const phrasesList = document.getElementById('typewriter-phrases-list');
 
 window.openEditModal = (id, jsonString) => openModal(true, id, JSON.parse(jsonString));
 function openModal(isEdit = false, id = null, data = null) {
     modal.classList.remove('hidden');
     document.getElementById('modal-project-id').value = id || '';
+    const modalFile = document.getElementById('modal-file');
+    const imagePreview = document.getElementById('image-preview');
+    const radioEmoji = document.querySelector('input[name="icon-type"][value="emoji"]');
+    const radioImage = document.querySelector('input[name="icon-type"][value="image"]');
+    const emojiGroup = document.getElementById('emoji-input-group');
+    const imageGroup = document.getElementById('image-input-group');
+
     if (isEdit && data) {
         document.getElementById('modal-title').value = data.title;
         document.getElementById('modal-desc').value = data.description;
         document.getElementById('modal-link').value = data.link;
         if (data.icon && data.icon.startsWith('data:image')) {
-            radioImage.checked = true; toggleIconInput('image');
-            currentBase64 = data.icon; imagePreview.style.backgroundImage = `url(${data.icon})`;
-            imagePreview.classList.remove('hidden');
+            radioImage.checked = true; emojiGroup.classList.add('hidden'); imageGroup.classList.remove('hidden');
+            imagePreview.style.backgroundImage = `url(${data.icon})`; imagePreview.classList.remove('hidden');
         } else {
-            radioEmoji.checked = true; toggleIconInput('emoji');
+            radioEmoji.checked = true; emojiGroup.classList.remove('hidden'); imageGroup.classList.add('hidden');
             document.getElementById('modal-emoji').value = data.icon;
         }
     } else {
@@ -250,143 +245,79 @@ function openModal(isEdit = false, id = null, data = null) {
         document.getElementById('modal-link').value = '';
         document.getElementById('modal-emoji').value = '';
         modalFile.value = ''; imagePreview.classList.add('hidden');
-        currentBase64 = null; radioEmoji.checked = true; toggleIconInput('emoji');
+        radioEmoji.checked = true; emojiGroup.classList.remove('hidden'); imageGroup.classList.add('hidden');
     }
 }
-function toggleIconInput(type) {
-    emojiGroup.classList.toggle('hidden', type !== 'emoji');
-    imageGroup.classList.toggle('hidden', type !== 'image');
-}
-if (radioEmoji) radioEmoji.addEventListener('change', () => toggleIconInput('emoji'));
-if (radioImage) radioImage.addEventListener('change', () => toggleIconInput('image'));
-if (modalFile) modalFile.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file && file.size <= 100 * 1024) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            currentBase64 = e.target.result;
-            imagePreview.style.backgroundImage = `url(${currentBase64})`;
-            imagePreview.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    } else { alert("Max size 100KB!"); }
-});
-document.getElementById('modal-save').addEventListener('click', async () => {
+
+document.getElementById('modal-save')?.addEventListener('click', async () => {
     const id = document.getElementById('modal-project-id').value;
     const title = document.getElementById('modal-title').value.trim();
     if (!title) return alert("Title required");
+    let icon = document.getElementById('modal-emoji').value.trim() || '🚀';
+    
+    // Check for image preview (currentBase64 would be here)
     const data = {
         title, description: document.getElementById('modal-desc').value.trim(),
         link: document.getElementById('modal-link').value.trim(),
-        icon: radioImage.checked ? currentBase64 : document.getElementById('modal-emoji').value.trim() || '🚀'
+        icon: icon
     };
     if (id) await setDoc(doc(db, "projects", id), data, { merge: true });
     else await addDoc(collection(db, "projects"), { ...data, createdAt: serverTimestamp() });
     modal.classList.add('hidden');
 });
-document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.add('hidden'));
-window.deleteProject = async (id) => {
-    if (confirm("Delete this project?")) await deleteDoc(doc(db, "projects", id));
-};
+document.getElementById('modal-cancel')?.addEventListener('click', () => modal.classList.add('hidden'));
 
-// ---------------------------
-// Navigation & Views
-// ---------------------------
-const homeView = document.getElementById('home-view');
-const aboutView = document.getElementById('about-view');
-function switchView(view) {
-    homeView.classList.toggle('hidden', view !== 'home');
-    aboutView.classList.toggle('hidden', view !== 'about');
-    document.getElementById('nav-home').classList.toggle('active', view === 'home');
-    document.getElementById('nav-about').classList.toggle('active', view === 'about');
-    if (view === 'about') loadAboutSections();
-}
-document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
-document.getElementById('nav-about').addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
-document.getElementById('nav-projects').addEventListener('click', () => switchView('home'));
-
-// ---------------------------
 // Typewriter Admin
-// ---------------------------
-const typewriterModal = document.getElementById('typewriter-modal');
-const phrasesList = document.getElementById('typewriter-phrases-list');
-document.getElementById('edit-typewriter-btn').addEventListener('click', () => {
+document.getElementById('edit-typewriter-btn')?.addEventListener('click', () => {
     phrasesList.innerHTML = '';
     phrases.forEach(p => addPhraseInputRow(p));
     typewriterModal.classList.remove('hidden');
 });
-document.getElementById('typewriter-cancel').addEventListener('click', () => typewriterModal.classList.add('hidden'));
-document.getElementById('add-phrase-btn').addEventListener('click', () => addPhraseInputRow(""));
+document.getElementById('typewriter-cancel')?.addEventListener('click', () => typewriterModal.classList.add('hidden'));
+document.getElementById('add-phrase-btn')?.addEventListener('click', () => addPhraseInputRow(""));
 function addPhraseInputRow(val) {
     const row = document.createElement('div'); row.className = 'info-item';
     row.innerHTML = `<input type="text" class="phrase-input" style="flex:1; background:transparent; color:#fff; border:1px solid #444; padding:5px; border-radius:5px;" value="${val}"> <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ff453a; cursor:pointer;">×</button>`;
     phrasesList.appendChild(row);
 }
-document.getElementById('typewriter-save').addEventListener('click', async () => {
+document.getElementById('typewriter-save')?.addEventListener('click', async () => {
     const newPhrases = Array.from(phrasesList.querySelectorAll('.phrase-input')).map(i => i.value.trim()).filter(v => v);
     if (newPhrases.length > 0) {
         await setDoc(doc(db, "settings", "typewriter"), { phrases: newPhrases }, { merge: true });
         typewriterModal.classList.add('hidden');
-    } else { alert("Need at least one phrase!"); }
+    }
 });
 
 // ---------------------------
-// Custom Cursor
+// Views & Cursor
 // ---------------------------
-const cursorDot = document.getElementById("cursor-dot");
-const cursorOutline = document.getElementById("cursor-outline");
-if (cursorDot && window.matchMedia("(pointer: fine)").matches) {
+const curDot = document.getElementById("cursor-dot");
+const curOutline = document.getElementById("cursor-outline");
+if (curDot && window.matchMedia("(pointer: fine)").matches) {
     let curX = 0, curY = 0, outX = 0, outY = 0;
     window.addEventListener("mousemove", (e) => {
         curX = e.clientX; curY = e.clientY;
-        cursorDot.style.left = curX + "px"; cursorDot.style.top = curY + "px";
+        curDot.style.left = curX + "px"; curDot.style.top = curY + "px";
     });
     function animate() {
         outX += (curX - outX) * 0.15; outY += (curY - outY) * 0.15;
-        cursorOutline.style.left = outX + "px"; cursorOutline.style.top = outY + "px";
+        curOutline.style.left = outX + "px"; curOutline.style.top = outY + "px";
         requestAnimationFrame(animate);
     }
     animate();
-    document.addEventListener("mouseover", (e) => {
-        if (e.target.closest('a, button, .card')) cursorOutline.classList.add("hover-state");
-    });
-    document.addEventListener("mouseout", (e) => {
-        if (e.target.closest('a, button, .card')) cursorOutline.classList.remove("hover-state");
-    });
-    document.addEventListener("mouseleave", () => { cursorDot.style.opacity = '0'; cursorOutline.style.opacity = '0'; });
-    document.addEventListener("mouseenter", () => { cursorDot.style.opacity = '1'; cursorOutline.style.opacity = '1'; });
+    document.addEventListener("mouseover", (e) => { if (e.target.closest('a, button, .card')) curOutline.classList.add("hover-state"); });
+    document.addEventListener("mouseout", (e) => { if (e.target.closest('a, button, .card')) curOutline.classList.remove("hover-state"); });
+    document.addEventListener("mouseleave", () => { curDot.style.opacity = '0'; curOutline.style.opacity = '0'; });
+    document.addEventListener("mouseenter", () => { curDot.style.opacity = '1'; curOutline.style.opacity = '1'; });
 }
 
-// ---------------------------
-// About Feature
-// ---------------------------
-const aboutContent = document.getElementById('about-content');
-function loadAboutSections() {
-    if (!aboutContent) return;
-    onSnapshot(query(collection(db, "about_sections"), orderBy("createdAt", "asc")), (snap) => {
-        aboutContent.innerHTML = '';
-        snap.forEach(d => renderAboutSection(d.id, d.data()));
-    });
+const hView = document.getElementById('home-view');
+const aView = document.getElementById('about-view');
+function switchView(v) {
+    hView.classList.toggle('hidden', v !== 'home'); aView.classList.toggle('hidden', v !== 'about');
+    document.getElementById('nav-home').classList.toggle('active', v === 'home');
+    document.getElementById('nav-about').classList.toggle('active', v === 'about');
 }
-function renderAboutSection(id, data) {
-    const div = document.createElement('div'); div.className = 'about-section-card';
-    let adm = isAdmin ? `<div class="admin-actions"><button onclick="toggleEdit('${id}')">Edit</button><button onclick="deleteAboutSection('${id}')">Delete</button></div>` : '';
-    div.innerHTML = `<div class="section-title"><span>${data.title}</span>${adm}</div><div class="info-grid" id="grid-${id}">${data.items.map(i => `<div class="info-item"><span class="info-label">${i.label}</span><span class="info-value">${i.value}</span></div>`).join('')}</div>`;
-    aboutContent.appendChild(div);
-}
-document.getElementById('add-section-btn')?.addEventListener('click', async () => {
-    const title = prompt("Section Title:");
-    if (title) await addDoc(collection(db, "about_sections"), { title, createdAt: serverTimestamp(), items: [{ label: "Label", value: "Value" }] });
-});
-window.deleteAboutSection = async (id) => { if (confirm("Delete section?")) await deleteDoc(doc(db, "about_sections", id)); };
-window.toggleEdit = (id) => {
-    const grid = document.getElementById(`grid-${id}`);
-    const items = Array.from(grid.children).map(i => ({ label: i.querySelector('.info-label').innerText, value: i.querySelector('.info-value').innerText }));
-    grid.innerHTML = items.map(i => `<div class="info-item"><input type="text" class="edit-l" value="${i.label}" style="width:100px;"> <input type="text" class="edit-v" value="${i.value}" style="flex:1;"> <button onclick="this.parentElement.remove()">×</button></div>`).join('') + `<button onclick="this.parentElement.insertAdjacentHTML('beforeend', '<div class=\\'info-item\\'><input type=\\'text\\' class=\\'edit-l\\' style=\\'width:100px;\\'> <input type=\\'text\\' class=\\'edit-v\\' style=\\'flex:1;\\'> <button onclick=\\'this.parentElement.remove()\\'>×</button></div>')">+ Row</button> <button onclick="saveSection('${id}')">Save</button>`;
-};
-window.saveSection = async (id) => {
-    const grid = document.getElementById(`grid-${id}`);
-    const items = Array.from(grid.querySelectorAll('.info-item')).map(row => ({ label: row.querySelector('.edit-l').value.trim(), value: row.querySelector('.edit-v').value.trim() })).filter(i => i.label || i.value);
-    await setDoc(doc(db, "about_sections", id), { items }, { merge: true });
-    loadAboutSections();
-};
+document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+document.getElementById('nav-about').addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
+document.getElementById('nav-projects').addEventListener('click', () => switchView('home'));
