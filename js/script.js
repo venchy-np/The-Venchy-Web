@@ -281,10 +281,26 @@ function addPhraseInputRow(val) {
     phrasesList.appendChild(row);
 }
 document.getElementById('typewriter-save')?.addEventListener('click', async () => {
-    const newPhrases = Array.from(phrasesList.querySelectorAll('.phrase-input')).map(i => i.value.trim()).filter(v => v);
-    if (newPhrases.length > 0) {
-        await setDoc(doc(db, "settings", "typewriter"), { phrases: newPhrases }, { merge: true });
-        typewriterModal.classList.add('hidden');
+    try {
+        const newPhrases = Array.from(phrasesList.querySelectorAll('.phrase-input'))
+            .map(i => i.value.trim())
+            .filter(v => v);
+        
+        if (newPhrases.length > 0) {
+            const btn = document.getElementById('typewriter-save');
+            const originalText = btn.innerText;
+            btn.innerText = "Saving...";
+            
+            await setDoc(doc(db, "settings", "typewriter"), { phrases: newPhrases }, { merge: true });
+            
+            btn.innerText = originalText;
+            typewriterModal.classList.add('hidden');
+        } else {
+            alert("Please add at least one phrase!");
+        }
+    } catch (e) {
+        console.error("Error saving phrases:", e);
+        alert("Error saving phrases: " + e.message);
     }
 });
 
@@ -321,3 +337,22 @@ function switchView(v) {
 document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
 document.getElementById('nav-about').addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
 document.getElementById('nav-projects').addEventListener('click', () => switchView('home'));
+
+// Mobile menu toggle
+const menuToggle = document.querySelector('.menu-toggle');
+const navLinks = document.querySelector('.nav-links');
+
+if (menuToggle && navLinks) {
+    menuToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+        menuToggle.classList.toggle('open');
+    });
+
+    // Close menu when clicking a link
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
+            menuToggle.classList.remove('open');
+        });
+    });
+}
