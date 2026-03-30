@@ -28,6 +28,7 @@ onAuthStateChanged(auth, (user) => {
     const isUserAdmin = user && user.email === ADMIN_EMAIL;
     const adminControls = document.getElementById('admin-controls'); // Assuming this is for thoughts
     const addSectionBtn = document.getElementById('add-section-btn'); // Assuming this is for about sections
+    const editTypewriterBtn = document.getElementById('edit-typewriter-btn');
 
     if (addProjectBtn) {
         if (isUserAdmin) addProjectBtn.classList.remove('hidden');
@@ -42,6 +43,11 @@ onAuthStateChanged(auth, (user) => {
     if (addSectionBtn) {
         if (isUserAdmin) addSectionBtn.classList.remove('hidden');
         else addSectionBtn.classList.add('hidden');
+    }
+
+    if (editTypewriterBtn) {
+        if (isUserAdmin) editTypewriterBtn.classList.remove('hidden');
+        else editTypewriterBtn.classList.add('hidden');
     }
 
     // Re-render components that might have admin-specific UI elements (like delete buttons)
@@ -124,6 +130,17 @@ function renderProjectCard(id, data) {
     `;
 
     grid.appendChild(card);
+
+    // Vanilla Tilt Initialization
+    if (window.VanillaTilt) {
+        VanillaTilt.init(card, {
+            max: 10,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.1,
+            scale: 1.02
+        });
+    }
 
     // Mouse Move Glow
     card.addEventListener('mousemove', (e) => {
@@ -647,3 +664,244 @@ window.saveSection = async (id) => {
 
 // Make functions global for inline onclicks
 window.renderAboutSection = renderAboutSection;
+
+// ---------------------------
+// Discord Live Presence (Lanyard)
+// ---------------------------
+const DISCORD_USER_ID = "1042813122697756795";
+
+async function fetchDiscordStatus() {
+    try {
+        const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
+        if (!response.ok) return; // Silent fail if not joined Lanyard server
+        
+        const { data } = await response.json();
+        
+        const dot = document.getElementById('discord-status-dot');
+        const text = document.getElementById('discord-status-text');
+        
+        if (!dot || !text) return;
+        
+        // Update color
+        dot.className = 'status-dot ' + data.discord_status;
+        
+        // Update text
+        let statusMsg = data.discord_status.charAt(0).toUpperCase() + data.discord_status.slice(1);
+        if (data.discord_status === 'dnd') statusMsg = 'Do Not Disturb';
+        
+        let isHTML = false;
+
+        if (data.activities && data.activities.length > 0) {
+            const playing = data.activities.find(a => a.type === 0);
+            const customStatus = data.activities.find(a => a.type === 4);
+            const vscode = data.activities.find(a => a.name.includes('Visual Studio'));
+            
+            if (playing) {
+                if (playing.name.length > 14) {
+                    statusMsg = `Playing: <marquee scrollamount="2" style="max-width: 70px; display: inline-block; vertical-align: bottom;">${playing.name}</marquee>`;
+                    isHTML = true;
+                } else {
+                    statusMsg = `Playing: ${playing.name}`;
+                }
+            } else if (vscode) {
+                statusMsg = `Coding in VS Code`;
+            } else if (data.listening_to_spotify) {
+                const song = data.spotify.song;
+                if (song.length > 14) {
+                    statusMsg = `Listening: <marquee scrollamount="2" style="max-width: 70px; display: inline-block; vertical-align: bottom;">${song}</marquee>`;
+                    isHTML = true;
+                } else {
+                    statusMsg = `Listening: ${song}`;
+                }
+            } else if (customStatus && customStatus.state) {
+                statusMsg = customStatus.state;
+            }
+        }
+        
+        if (isHTML) {
+            text.innerHTML = statusMsg;
+        } else {
+            text.innerText = statusMsg;
+        }
+        text.classList.remove('hidden');
+    } catch (error) {
+        console.error("Error fetching Discord status:", error);
+    }
+}
+
+// Fetch initially and then every 15 seconds
+fetchDiscordStatus();
+setInterval(fetchDiscordStatus, 15000);
+
+// ---------------------------
+// Typewriter Effect
+// ---------------------------
+let phrases = ["Learning around...", "I just love listening to music🎶", "I will code greatness someday ✨"];
+let phraseIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+
+// Fetch phrases dynamically
+onSnapshot(doc(db, "settings", "typewriter"), (docSnap) => {
+    if (docSnap.exists() && docSnap.data().phrases && docSnap.data().phrases.length > 0) {
+        phrases = docSnap.data().phrases;
+        if (phraseIndex >= phrases.length) {
+            phraseIndex = 0;
+            charIndex = 0;
+        }
+    }
+});
+
+function typeWriter() {
+    const textDisplay = document.querySelector('.typewriter-text');
+    if (!textDisplay) return;
+
+    const currentPhrase = phrases[phraseIndex];
+    
+    if (isDeleting) {
+        textDisplay.innerHTML = currentPhrase.substring(0, charIndex - 1);
+        charIndex--;
+    } else {
+        textDisplay.innerHTML = currentPhrase.substring(0, charIndex + 1);
+        charIndex++;
+    }
+
+    let typeSpeed = isDeleting ? 40 : 100;
+
+    if (!isDeleting && charIndex === currentPhrase.length) {
+        typeSpeed = 2000; // Pause at end
+        isDeleting = true;
+    } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        typeSpeed = 500; // Pause before new phrase
+    }
+
+    setTimeout(typeWriter, typeSpeed);
+}
+// Start typewriter
+setTimeout(typeWriter, 1000);
+
+// ---------------------------
+// Custom Mouse Cursor
+// ---------------------------
+const cursorDot = document.getElementById("cursor-dot");
+const cursorOutline = document.getElementById("cursor-outline");
+
+if (cursorDot && cursorOutline && window.matchMedia("(pointer: fine)").matches) {
+    let cursorX = window.innerWidth / 2;
+    let cursorY = window.innerHeight / 2;
+    let outlineX = window.innerWidth / 2;
+    let outlineY = window.innerHeight / 2;
+    
+    // Track cursor real pos
+    window.addEventListener("mousemove", (e) => {
+        cursorX = e.clientX;
+        cursorY = e.clientY;
+        
+        // Immediate update for dot
+        cursorDot.style.left = `${cursorX}px`;
+        cursorDot.style.top = `${cursorY}px`;
+    });
+
+    // Smooth animation loop for outline
+    function animateCursor() {
+        // Easing interpolation for delayed outline
+        outlineX += (cursorX - outlineX) * 0.2;
+        outlineY += (cursorY - outlineY) * 0.2;
+        
+        cursorOutline.style.left = `${outlineX}px`;
+        cursorOutline.style.top = `${outlineY}px`;
+        
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // Hover effect
+    document.addEventListener("mouseover", (e) => {
+        const target = e.target;
+        if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button') || target.closest('.card')) {
+            cursorOutline.classList.add("hover-state");
+        }
+    });
+
+    document.addEventListener("mouseout", (e) => {
+        const target = e.target;
+        if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button') || target.closest('.card')) {
+            cursorOutline.classList.remove("hover-state");
+        }
+    });
+
+    // Hide when mouse leaves viewport
+    document.addEventListener("mouseleave", () => {
+        cursorDot.style.opacity = '0';
+        cursorOutline.style.opacity = '0';
+    });
+
+    // Show when mouse enters viewport
+    document.addEventListener("mouseenter", () => {
+        cursorDot.style.opacity = '1';
+        cursorOutline.style.opacity = '1';
+    });
+}
+
+// ---------------------------
+// Typewriter Admin Controls
+// ---------------------------
+const typewriterModal = document.getElementById('typewriter-modal');
+const btnEditTypewriter = document.getElementById('edit-typewriter-btn');
+const btnCloseTypewriter = document.getElementById('typewriter-cancel');
+const btnSaveTypewriter = document.getElementById('typewriter-save');
+const btnAddPhrase = document.getElementById('add-phrase-btn');
+const phrasesListContainer = document.getElementById('typewriter-phrases-list');
+
+if (btnEditTypewriter) {
+    btnEditTypewriter.addEventListener('click', () => {
+        phrasesListContainer.innerHTML = '';
+        phrases.forEach((phrase) => addPhraseInputRow(phrase));
+        typewriterModal.classList.remove('hidden');
+    });
+}
+
+if (btnCloseTypewriter) {
+    btnCloseTypewriter.addEventListener('click', () => typewriterModal.classList.add('hidden'));
+}
+
+if (btnAddPhrase) {
+    btnAddPhrase.addEventListener('click', () => addPhraseInputRow(""));
+}
+
+function addPhraseInputRow(value) {
+    const row = document.createElement('div');
+    row.className = 'info-item'; // Re-using existing CSS class for inputs
+    row.innerHTML = `
+        <input type="text" class="edit-value phrase-input" style="flex:1;" value="${value.replace(/"/g, '&quot;')}" placeholder="Your phrase here...">
+        <button class="delete-btn" onclick="this.parentElement.remove()">×</button>
+    `;
+    phrasesListContainer.appendChild(row);
+}
+
+if (btnSaveTypewriter) {
+    btnSaveTypewriter.addEventListener('click', async () => {
+        const inputs = phrasesListContainer.querySelectorAll('.phrase-input');
+        const newPhrases = [];
+        inputs.forEach(input => {
+            if (input.value.trim()) newPhrases.push(input.value.trim());
+        });
+
+        if (newPhrases.length === 0) {
+            alert("Please add at least one phrase!");
+            return;
+        }
+
+        try {
+            await setDoc(doc(db, "settings", "typewriter"), { phrases: newPhrases }, { merge: true });
+            typewriterModal.classList.add('hidden');
+        } catch (e) {
+            alert("Error saving: " + e.message);
+        }
+    });
+}
+
+
+

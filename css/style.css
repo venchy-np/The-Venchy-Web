@@ -387,7 +387,7 @@ body {
     transition: color 0.3s ease;
 }
 
-.nav-social-link span {
+.nav-social-link span:not(.status-dot) {
     max-width: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -401,9 +401,9 @@ body {
     color: var(--text-primary);
 }
 
-.nav-social-link:hover span {
-    max-width: 100px;
-    /* Enough to show username */
+.nav-social-link:hover span:not(.status-dot) {
+    max-width: 140px;
+    /* Enough to show username and presence */
     opacity: 1;
 }
 
@@ -799,6 +799,111 @@ main {
     max-width: 800px;
     margin: 40px auto;
     padding: 0 20px;
+}
+
+/* Discord Status Styles */
+.discord-status-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-color);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.status-dot.online { background-color: #23a55a; box-shadow: 0 0 8px #23a55a; }
+.status-dot.idle { background-color: #f0b232; box-shadow: 0 0 8px #f0b232; }
+.status-dot.dnd { background-color: #f23f43; box-shadow: 0 0 8px #f23f43; }
+.status-dot.offline { background-color: #80848e; }
+
+.status-text-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.status-text {
+    font-size: 0.70rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
+.status-text.hidden {
+    display: none !important;
+}
+
+/* Typewriter Section */
+.typewriter-text {
+    font-weight: 600;
+    color: var(--accent-magenta);
+}
+
+.typewriter-cursor {
+    font-weight: 600;
+    color: var(--accent-magenta);
+    animation: blinkCursor 0.7s infinite;
+}
+
+@keyframes blinkCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Custom Cursor */
+@media (pointer: fine) {
+    body, a, button, input, textarea, .card {
+        cursor: none !important;
+    }
+}
+
+.cursor-dot {
+    position: fixed;
+    top: -50px;
+    left: -50px;
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10000;
+    transition: opacity 0.3s;
+}
+
+.cursor-outline {
+    position: fixed;
+    top: -50px;
+    left: -50px;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--accent-magenta-dim);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+    transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s, opacity 0.3s;
+}
+
+.cursor-outline.hover-state {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 0, 255, 0.1);
+    border-color: rgba(255, 0, 255, 0.4);
 }
 
 .about-header {

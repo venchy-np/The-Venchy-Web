@@ -39,20 +39,12 @@ function toggleChat(show) {
 
         // Clear Unread Counts on Open
         if (currentUser) {
-            const update = {};
+            chatFab.classList.remove('has-new');
+            chatFab.removeAttribute('data-count');
+
             if (currentUser.email !== ADMIN_EMAIL) {
-                // User opening: Clear their own unread count
-                update.unreadCountUser = 0;
-                chatFab.classList.remove('has-new');
-                chatFab.removeAttribute('data-count');
-            } else {
-                // Admin opening: (Handled per chat in click? No, global FAB clear? 
-                // Admin FAB shows TOTAL unread. 
-                // Note: Admin reads specific chats, clearing that chat's count. 
-                // The FAB will update automatically because it listens to the collection snapshot.)
-            }
-            if (Object.keys(update).length > 0) {
-                setDoc(doc(db, "chats", currentUser.uid), update, { merge: true });
+                // User opening: Clear their own unread count globally in DB
+                setDoc(doc(db, "chats", currentUser.uid), { unreadCountUser: 0 }, { merge: true });
             }
         }
     } else {
@@ -240,9 +232,41 @@ onAuthStateChanged(auth, async (user) => {
                 btnAdminList.classList.remove('hidden');
                 setupAdminListener();
             }
+            // Admin Global Unread Listener
+            onSnapshot(collection(db, "chats"), (snapshot) => {
+                let unreadChats = 0;
+                snapshot.forEach(docSnap => {
+                    if (docSnap.data().hasUnread) unreadChats++;
+                });
+                
+                if (unreadChats > 0 && chatWidget.classList.contains('hidden')) {
+                    chatFab.classList.add('has-new');
+                    chatFab.setAttribute('data-count', unreadChats > 9 ? '9+' : unreadChats);
+                } else if (unreadChats === 0) {
+                    chatFab.classList.remove('has-new');
+                    chatFab.removeAttribute('data-count');
+                }
+            });
         } else {
             if (navChatTrigger) navChatTrigger.textContent = "Chat with me";
             if (btnAdminList) btnAdminList.classList.add('hidden');
+            
+            // User Global Unread Listener
+            onSnapshot(doc(db, "chats", user.uid), (docSnap) => {
+                const data = docSnap.data();
+                if (data && data.unreadCountUser > 0) {
+                    if (chatWidget.classList.contains('hidden')) {
+                        chatFab.classList.add('has-new');
+                        chatFab.setAttribute('data-count', data.unreadCountUser > 9 ? '9+' : data.unreadCountUser);
+                    } else {
+                        // User has widget open, clear instantly
+                        setDoc(doc(db, "chats", user.uid), { unreadCountUser: 0 }, { merge: true });
+                    }
+                } else {
+                    chatFab.classList.remove('has-new');
+                    chatFab.removeAttribute('data-count');
+                }
+            });
         }
 
         // 3. Background: Save user to Firestore (Non-blocking)
@@ -331,7 +355,7 @@ if (messageForm) messageForm.addEventListener('submit', async (e) => {
             updateData.hasUnread = true;
         } else {
             // Admin sending to User
-            updateData.unreadByUser = true;
+            updateData.unreadCountUser = increment(1);
         }
 
         await setDoc(doc(db, "chats", currentChatId), updateData, { merge: true });
@@ -361,41 +385,24 @@ function loadMessages(chatId) {
         setTimeout(scrollToBottom, 50);
     });
 
-    // 2. Listen to Chat Document (For "Seen" status updates AND Unread Badge)
-    // Only needed if I am the User
-    if (currentUser.email !== ADMIN_EMAIL) {
-        currentChatDocUnsubscribe = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
-            const data = docSnap.data();
-            if (data) {
-                // Check Seen Status
-                if (data.adminLastSeen) {
-                    window.currentAdminLastSeen = data.adminLastSeen;
-                    updateMessageStatuses();
-                }
-
-                // Numeric Badge for User
-                const count = data.unreadCountUser || 0;
-                if (count > 0 && chatWidget.classList.contains('hidden')) {
-                    chatFab.classList.add('has-new');
-                    chatFab.setAttribute('data-count', count > 9 ? '9+' : count);
-                } else {
-                    chatFab.classList.remove('has-new');
-                    chatFab.removeAttribute('data-count');
-
-                    // If open, reset immediately
-                    if (!chatWidget.classList.contains('hidden') && count > 0) {
-                        setDoc(doc(db, "chats", chatId), { unreadCountUser: 0 }, { merge: true });
-                    }
-                }
+    // 2. Listen to Chat Document (For "Seen" status updates)
+    currentChatDocUnsubscribe = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
+        const data = docSnap.data();
+        if (data) {
+            // Check Seen Status
+            if (data.adminLastSeen) {
+                window.currentAdminLastSeen = data.adminLastSeen;
+                updateMessageStatuses();
             }
-        });
-    } else {
-        // I Am Admin: When I open this logic, I should mark as Read
-        setDoc(doc(db, "chats", chatId), {
-            hasUnread: false,
-            adminLastSeen: serverTimestamp()
-        }, { merge: true });
-    }
+            // Admin marked as read dynamically if open
+            if (currentUser.email === ADMIN_EMAIL && data.hasUnread) {
+                setDoc(doc(db, "chats", chatId), {
+                    hasUnread: false,
+                    adminLastSeen: serverTimestamp()
+                }, { merge: true });
+            }
+        }
+    });
 }
 
 // Ensure opening chat clears user unread
