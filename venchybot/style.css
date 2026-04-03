@@ -253,21 +253,21 @@ body {
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
 }
 
-.btn-google {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+.btn-discord {
+    background: #5865F2; /* Discord Blurple */
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 12px 28px;
     font-size: 0.95rem;
     width: 100%;
     justify-content: center;
 }
 
-.btn-google:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: var(--border-active);
+.btn-discord:hover {
+    background: #4752C4;
+    border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
 }
 
 .btn-ghost {
