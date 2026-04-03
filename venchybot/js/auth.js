@@ -3,7 +3,7 @@
  * Google Sign-in with admin whitelist stored in Firestore
  */
 
-import { OAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged }
+import { OAuthProvider, signInWithPopup, signInWithCustomToken, signOut as firebaseSignOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc }
     from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -89,30 +89,64 @@ async function checkAdmin(user) {
 }
 
 
-// ── Discord Sign-In ───────────────────────────────────────────
-window.signInWithDiscord = async function() {
-    const auth = window.firebaseAuth;
-    const provider = new OAuthProvider('discord.com');
-    
-    // Scopes for guild and user info
-    provider.addScope('identify');
-    provider.addScope('email');
+// ── Discord Auth Core ─────────────────────────────────────────
+const DISCORD_CLIENT_ID = "1489277267249987685";
+const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
+const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify%20guilds`;
+
+// Placeholder for your Railway bot URL (update this after deployment)
+const BOT_API_URL = window.location.origin.includes('localhost') 
+    ? 'http://localhost:8080' 
+    : 'https://venchy-bot.up.railway.app'; 
+
+// ── Discord Sign-In (Redirect) ────────────────────────────────
+window.signInWithDiscord = function() {
+    window.location.href = DISCORD_AUTH_URL;
+};
+
+// ── Check for Discord Redirect Callback ───────────────────────
+async function checkDiscordCallback() {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("access_token=")) return;
+
+    // Clear hash from URL immediately for clean history
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get("access_token");
+    window.history.replaceState(null, null, window.location.pathname);
+
+    if (!accessToken) return;
+
+    showToast("Authenticating with Venchy Bot...", "info");
 
     try {
-        const result = await signInWithPopup(auth, provider);
-        console.log("✅ Signed in via Discord:", result.user.displayName);
-        showToast(`Welcome, ${result.user.displayName}!`, "success");
-    } catch (error) {
-        if (error.code === 'auth/popup-closed-by-user') {
-            console.log("Sign-in popup closed by user");
-        } else if (error.code === 'auth/popup-blocked') {
-            showToast("Popup blocked — please allow popups for this site", "error");
-        } else {
-            console.error("Sign-in error:", error);
-            showToast("Discord sign-in failed: " + error.message, "error");
+        const response = await fetch(`${BOT_API_URL}/auth`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ access_token: accessToken })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "Failed to bridge authentication");
         }
+
+        const data = await response.json();
+        
+        // Save manageable guilds to global state for dashboard.js
+        window.userManageableGuilds = data.guilds;
+
+        // Sign in to Firebase with the Custom Token from the bot
+        await signInWithCustomToken(window.firebaseAuth, data.firebase_token);
+        console.log("✅ Successfully bridged Discord auth to Firebase");
+
+    } catch (error) {
+        console.error("Auth bridge error:", error);
+        showToast("Bot authentication failed: " + error.message, "error");
     }
-};
+}
+
+// Ensure callback check runs on module load
+waitForFirebase().then(checkDiscordCallback);
 
 
 // ── Sign Out ───────────────────────────────────────────────────

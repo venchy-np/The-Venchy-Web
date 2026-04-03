@@ -20,27 +20,37 @@ window.loadDashboardData = async function () {
     const db = window.firebaseDb;
 
     try {
-        // Load all guilds into the selector
-        const guildsSnap = await getDocs(collection(db, "guilds"));
         const guildSelect = document.getElementById("guild-select");
+        let guilds = [];
+
+        // Priority 1: Use guilds returned by the bot bridge (with MANAGE_SERVER perms)
+        if (window.userManageableGuilds && window.userManageableGuilds.length > 0) {
+            console.log("📂 Using manageable guilds from bot bridge");
+            guilds = window.userManageableGuilds;
+        } else {
+            // Priority 2: Fallback to all guilds in Firestore (legacy/admin view)
+            console.log("📂 Fetching all guilds from Firestore");
+            const guildsSnap = await getDocs(collection(db, "guilds"));
+            guildsSnap.forEach((doc) => {
+                const data = doc.data();
+                guilds.push({ id: doc.id, name: data.guild_name || `Server ${doc.id}` });
+            });
+        }
 
         // Clear existing options (keep the default)
         guildSelect.innerHTML = '<option value="">Select Server...</option>';
 
-        let guildCount = 0;
-        guildsSnap.forEach((doc) => {
-            const data = doc.data();
+        guilds.forEach((guild) => {
             const option = document.createElement("option");
-            option.value = doc.id;
-            option.textContent = data.guild_name || `Server ${doc.id}`;
+            option.value = guild.id;
+            option.textContent = guild.name;
             guildSelect.appendChild(option);
-            guildCount++;
         });
 
-        document.getElementById("stat-server-count").textContent = guildCount;
+        document.getElementById("stat-server-count").textContent = guilds.length;
 
         // Auto-select if only one guild
-        if (guildCount === 1) {
+        if (guilds.length === 1) {
             guildSelect.selectedIndex = 1;
             currentGuildId = guildSelect.value;
             loadGuildFeeds(currentGuildId);
