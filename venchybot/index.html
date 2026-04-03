@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <!-- ══════════════════════════════════════════════════════ -->
@@ -29,10 +29,10 @@
             </div>
             <h1>Venchy Bot</h1>
             <p class="auth-subtitle">Discord Notification Dashboard</p>
-            <p class="auth-desc">Sign in with your Discord account to manage feeds for the servers you administrate.</p>
+            <p class="auth-desc">Sign in with your Google account to manage your YouTube &amp; Instagram feed notifications.</p>
             <button id="btn-discord-signin" class="btn btn-discord" onclick="signInWithDiscord()">
-                <i class="fab fa-discord" style="font-size: 1.2rem; margin-right: 4px;"></i>
-                Login with Discord
+                <i class="fab fa-discord"></i>
+                Sign in with Discord
             </button>
             <p class="auth-note"><i class="fas fa-lock"></i> Only authorized admins can access this dashboard</p>
         </div>
@@ -174,27 +174,46 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="yt-channel-id">Channel ID <span class="required">*</span></label>
-                    <input type="text" id="yt-channel-id" placeholder="UCxxxxxxxxxxxxxxxxxxxxxx" required>
-                    <small>Starts with "UC" — find it in the channel's page source or URL</small>
+                    <label for="yt-input-search">Channel URL or Handle <span class="required">*</span></label>
+                    <div class="input-with-button">
+                        <input type="text" id="yt-input-search" placeholder="e.g., @MrBeast or youtube.com/c/..." required>
+                        <button class="btn btn-secondary btn-sm" onclick="resolveYouTubeChannel()">
+                            <i class="fas fa-search"></i> Resolve
+                        </button>
+                    </div>
+                    <small>Enter a handle or URL and click Resolve</small>
+                </div>
+
+                <div id="yt-resolved-info" class="resolved-info hidden">
+                    <div class="channel-preview">
+                        <img id="yt-preview-avatar" src="" alt="">
+                        <div class="channel-meta">
+                            <span id="yt-preview-name"></span>
+                            <span id="yt-preview-id"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs to hold the resolved data -->
+                <input type="hidden" id="yt-channel-id">
+                <input type="hidden" id="yt-channel-name">
+
+                <div class="form-group">
+                    <label for="yt-discord-channel">Discord Notify Channel <span class="required">*</span></label>
+                    <select id="yt-discord-channel" required>
+                        <option value="">Select a channel...</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="yt-channel-name">Channel Name <span class="required">*</span></label>
-                    <input type="text" id="yt-channel-name" placeholder="e.g., MrBeast" required>
-                </div>
-                <div class="form-group">
-                    <label for="yt-discord-channel">Discord Channel ID</label>
-                    <input type="text" id="yt-discord-channel" placeholder="Discord channel ID for notifications">
-                    <small>Right-click a channel in Discord → Copy Channel ID</small>
-                </div>
-                <div class="form-group">
-                    <label for="yt-ping-role">Ping Role ID <span class="optional">(optional)</span></label>
-                    <input type="text" id="yt-ping-role" placeholder="Role ID to ping on new uploads">
+                    <label for="yt-ping-role">Ping Role <span class="optional">(optional)</span></label>
+                    <select id="yt-ping-role">
+                        <option value="">No ping</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="closeModal('youtube')">Cancel</button>
-                <button class="btn btn-primary" onclick="addYouTubeFeed()">
+                <button id="btn-add-yt" class="btn btn-primary" onclick="addYouTubeFeed()" disabled>
                     <i class="fas fa-plus"></i> Add Channel
                 </button>
             </div>
@@ -219,15 +238,19 @@
                 <div class="form-group">
                     <label for="ig-label">Label <span class="required">*</span></label>
                     <input type="text" id="ig-label" placeholder="e.g., my_brand" required>
-                    <small>A friendly name for this feed (used as identifier)</small>
+                    <small>A friendly name for this feed</small>
                 </div>
                 <div class="form-group">
-                    <label for="ig-discord-channel">Discord Channel ID</label>
-                    <input type="text" id="ig-discord-channel" placeholder="Discord channel ID for notifications">
+                    <label for="ig-discord-channel">Discord Notify Channel <span class="required">*</span></label>
+                    <select id="ig-discord-channel" required>
+                        <option value="">Select a channel...</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="ig-ping-role">Ping Role ID <span class="optional">(optional)</span></label>
-                    <input type="text" id="ig-ping-role" placeholder="Role ID to ping on new posts">
+                    <label for="ig-ping-role">Ping Role <span class="optional">(optional)</span></label>
+                    <select id="ig-ping-role">
+                        <option value="">No ping</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
