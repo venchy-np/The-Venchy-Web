@@ -24,6 +24,7 @@ onAuthStateChanged(auth, (user) => {
     // Refresh Data
     renderProjects();
     loadThoughts();
+    loadAboutSections();
 });
 
 // ---------------------------
@@ -210,6 +211,113 @@ window.deleteThought = async (id) => {
     if (confirm("Delete this note?")) await deleteDoc(doc(db, "thoughts", id));
 };
 
+// Handle Posting Thought
+document.getElementById('post-thought')?.addEventListener('click', async () => {
+    const input = document.getElementById('thought-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    try {
+        await addDoc(collection(db, "thoughts"), {
+            text: text,
+            createdAt: serverTimestamp()
+        });
+        input.value = '';
+    } catch (e) {
+        console.error("Error posting thought:", e);
+        alert("Error posting thought: " + e.message);
+    }
+});
+
+document.getElementById('thought-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('post-thought')?.click();
+    }
+});
+
+// ---------------------------
+// About Sections Feature
+// ---------------------------
+function loadAboutSections() {
+    const aboutContent = document.getElementById('about-content');
+    if (!aboutContent) return;
+    
+    const q = query(collection(db, "about"), orderBy("createdAt", "asc"));
+    onSnapshot(q, (snapshot) => {
+        aboutContent.innerHTML = '';
+        if (snapshot.empty) {
+            aboutContent.innerHTML = '<p style="opacity:0.6;">No about sections yet.</p>';
+            return;
+        }
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            const section = document.createElement('div');
+            section.className = 'about-card fade-in';
+            
+            let adminHtml = '';
+            if (isAdmin) {
+                adminHtml = `
+                    <div class="project-admin-overlay" style="top: 10px; right: 10px;">
+                        <button class="project-edit-btn" onclick="openAboutEditModal('${id}', '${data.title.replace(/'/g, "\\'")}', '${data.content.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')">✎</button>
+                        <button class="project-delete-btn" onclick="deleteAboutSection('${id}')">🗑</button>
+                    </div>`;
+            }
+            
+            section.innerHTML = `
+                ${adminHtml}
+                <h3>${data.title}</h3>
+                <p style="white-space: pre-wrap;">${data.content}</p>
+            `;
+            aboutContent.appendChild(section);
+        });
+    });
+}
+
+window.openAboutEditModal = (id, title, content) => {
+    const abModal = document.getElementById('about-modal');
+    document.getElementById('about-section-id').value = id;
+    document.getElementById('about-title').value = title;
+    document.getElementById('about-content-input').value = content;
+    abModal.classList.remove('hidden');
+};
+
+window.deleteAboutSection = async (id) => {
+    if (confirm("Delete this section?")) await deleteDoc(doc(db, "about", id));
+};
+
+document.getElementById('add-section-btn')?.addEventListener('click', () => {
+    document.getElementById('about-section-id').value = '';
+    document.getElementById('about-title').value = '';
+    document.getElementById('about-content-input').value = '';
+    document.getElementById('about-modal').classList.remove('hidden');
+});
+
+document.getElementById('about-cancel')?.addEventListener('click', () => {
+    document.getElementById('about-modal').classList.add('hidden');
+});
+
+document.getElementById('about-save')?.addEventListener('click', async () => {
+    const id = document.getElementById('about-section-id').value;
+    const title = document.getElementById('about-title').value.trim();
+    const content = document.getElementById('about-content-input').value.trim();
+    
+    if (!title || !content) return alert("Title and Content required");
+    
+    try {
+        const data = { title, content };
+        if (id) {
+            await setDoc(doc(db, "about", id), data, { merge: true });
+        } else {
+            await addDoc(collection(db, "about"), { ...data, createdAt: serverTimestamp() });
+        }
+        document.getElementById('about-modal').classList.add('hidden');
+    } catch (e) {
+        console.error("Error saving about section:", e);
+        alert("Error saving: " + e.message);
+    }
+});
+
 // ---------------------------
 // Admin Modals
 // ---------------------------
@@ -245,17 +353,69 @@ function openModal(isEdit = false, id = null, data = null) {
         document.getElementById('modal-link').value = '';
         document.getElementById('modal-emoji').value = '';
         modalFile.value = ''; imagePreview.classList.add('hidden');
+        imagePreview.style.backgroundImage = '';
         radioEmoji.checked = true; emojiGroup.classList.remove('hidden'); imageGroup.classList.add('hidden');
     }
 }
+
+// Icon Type Toggles
+document.querySelectorAll('input[name="icon-type"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const emojiGroup = document.getElementById('emoji-input-group');
+        const imageGroup = document.getElementById('image-input-group');
+        if (e.target.value === 'emoji') {
+            emojiGroup.classList.remove('hidden');
+            imageGroup.classList.add('hidden');
+        } else {
+            emojiGroup.classList.add('hidden');
+            imageGroup.classList.remove('hidden');
+        }
+    });
+});
+
+// Image Preview Handling
+let currentBase64 = null;
+document.getElementById('modal-file')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 102400) return alert("File too large! Max 100KB");
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        currentBase64 = event.target.result;
+        const preview = document.getElementById('image-preview');
+        preview.style.backgroundImage = `url(${currentBase64})`;
+        preview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+});
+
+// Hook up Add Project Button
+document.getElementById('add-project-btn')?.addEventListener('click', () => openModal(false));
 
 document.getElementById('modal-save')?.addEventListener('click', async () => {
     const id = document.getElementById('modal-project-id').value;
     const title = document.getElementById('modal-title').value.trim();
     if (!title) return alert("Title required");
-    let icon = document.getElementById('modal-emoji').value.trim() || '🚀';
+    const isImage = document.querySelector('input[name="icon-type"][value="image"]').checked;
+    let icon = '🚀';
     
-    // Check for image preview (currentBase64 would be here)
+    if (isImage) {
+        // If it's an image, check if we have a new base64 or an existing one from preview
+        const preview = document.getElementById('image-preview');
+        const bg = preview.style.backgroundImage;
+        if (bg && bg.startsWith('url("data:image')) {
+            icon = bg.slice(5, -2); // Extract data URL from url("...")
+        } else if (currentBase64) {
+            icon = currentBase64;
+        } else {
+            alert("Please upload an image or choose emoji");
+            return;
+        }
+    } else {
+        icon = document.getElementById('modal-emoji').value.trim() || '🚀';
+    }
+    
     const data = {
         title, description: document.getElementById('modal-desc').value.trim(),
         link: document.getElementById('modal-link').value.trim(),
@@ -263,6 +423,7 @@ document.getElementById('modal-save')?.addEventListener('click', async () => {
     };
     if (id) await setDoc(doc(db, "projects", id), data, { merge: true });
     else await addDoc(collection(db, "projects"), { ...data, createdAt: serverTimestamp() });
+    currentBase64 = null; // Reset
     modal.classList.add('hidden');
 });
 document.getElementById('modal-cancel')?.addEventListener('click', () => modal.classList.add('hidden'));
