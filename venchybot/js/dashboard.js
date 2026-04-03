@@ -12,6 +12,7 @@ import {
 let currentGuildId = null;
 let ytUnsubscribe = null;
 let igUnsubscribe = null;
+let guildMetadata = { channels: [], roles: [] };
 
 
 // ── Load Dashboard Data ────────────────────────────────────────
@@ -102,10 +103,11 @@ async function loadGuildFeeds(guildId) {
     try {
         const metaDoc = await getDoc(doc(db, "guilds", guildId, "info", "meta"));
         if (metaDoc.exists()) {
-            const data = metaDoc.data();
-            populateDropdowns(data.channels || [], data.roles || []);
+            guildMetadata = metaDoc.data();
+            populateDropdowns(guildMetadata.channels || [], guildMetadata.roles || []);
         } else {
             console.warn("No metadata found for guild:", guildId);
+            guildMetadata = { channels: [], roles: [] };
             populateDropdowns([], []);
         }
     } catch (error) {
@@ -172,23 +174,28 @@ function renderYouTubeFeeds(feeds) {
         return;
     }
 
-    container.innerHTML = feeds.map(feed => `
-        <div class="feed-card" data-id="${feed.channel_id}">
-            <div class="feed-info">
-                <div class="feed-name">📺 ${escapeHtml(feed.channel_name || feed.channel_id)}</div>
-                <div class="feed-details">
-                    <span><i class="fas fa-fingerprint"></i> ${feed.channel_id}</span>
-                    <span><i class="fas fa-hashtag"></i> ${feed.discord_channel_id || 'Not set'}</span>
-                    ${feed.ping_role_id ? `<span><i class="fas fa-bell"></i> Role: ${feed.ping_role_id}</span>` : ''}
+    container.innerHTML = feeds.map(feed => {
+        const channelName = guildMetadata.channels?.find(c => c.id === feed.discord_channel_id)?.name || feed.discord_channel_id;
+        const roleName = feed.ping_role_id ? (guildMetadata.roles?.find(r => r.id === feed.ping_role_id)?.name || feed.ping_role_id) : null;
+
+        return `
+            <div class="feed-card" data-id="${feed.channel_id}">
+                <div class="feed-info">
+                    <div class="feed-name">📺 ${escapeHtml(feed.channel_name || feed.channel_id)}</div>
+                    <div class="feed-details">
+                        <span><i class="fas fa-fingerprint"></i> ${feed.channel_id}</span>
+                        <span><i class="fas fa-hashtag"></i> ${escapeHtml(channelName)}</span>
+                        ${roleName ? `<span><i class="fas fa-bell"></i> @ ${escapeHtml(roleName)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="feed-actions">
+                    <button class="btn btn-danger btn-sm" onclick="removeYouTubeFeed('${escapeHtml(feed.channel_id)}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
                 </div>
             </div>
-            <div class="feed-actions">
-                <button class="btn btn-danger btn-sm" onclick="removeYouTubeFeed('${escapeHtml(feed.channel_id)}')">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-            </div>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 
@@ -200,23 +207,28 @@ function renderInstagramFeeds(feeds) {
         return;
     }
 
-    container.innerHTML = feeds.map(feed => `
-        <div class="feed-card" data-id="${feed.label}">
-            <div class="feed-info">
-                <div class="feed-name">📸 ${escapeHtml(feed.display_name || feed.label)}</div>
-                <div class="feed-details">
-                    <span><i class="fas fa-rss"></i> ${escapeHtml((feed.rss_url || '').substring(0, 45))}...</span>
-                    <span><i class="fas fa-hashtag"></i> ${feed.discord_channel_id || 'Not set'}</span>
-                    ${feed.ping_role_id ? `<span><i class="fas fa-bell"></i> Role: ${feed.ping_role_id}</span>` : ''}
+    container.innerHTML = feeds.map(feed => {
+        const channelName = guildMetadata.channels?.find(c => c.id === feed.discord_channel_id)?.name || feed.discord_channel_id;
+        const roleName = feed.ping_role_id ? (guildMetadata.roles?.find(r => r.id === feed.ping_role_id)?.name || feed.ping_role_id) : null;
+
+        return `
+            <div class="feed-card" data-id="${feed.label}">
+                <div class="feed-info">
+                    <div class="feed-name">📸 ${escapeHtml(feed.display_name || feed.label)}</div>
+                    <div class="feed-details">
+                        <span><i class="fas fa-rss"></i> ${escapeHtml((feed.rss_url || '').substring(0, 45))}...</span>
+                        <span><i class="fas fa-hashtag"></i> ${escapeHtml(channelName)}</span>
+                        ${roleName ? `<span><i class="fas fa-bell"></i> @ ${escapeHtml(roleName)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="feed-actions">
+                    <button class="btn btn-danger btn-sm" onclick="removeInstagramFeed('${escapeHtml(feed.label)}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
                 </div>
             </div>
-            <div class="feed-actions">
-                <button class="btn btn-danger btn-sm" onclick="removeInstagramFeed('${escapeHtml(feed.label)}')">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-            </div>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 
