@@ -52,12 +52,17 @@ waitForFirebase().then(() => {
 
 
 // ── Check if user is an admin ──────────────────────────────────
-async function checkAdmin(email) {
+async function checkAdmin(user) {
     const db = window.firebaseDb;
     
+    // We treat either the email or the Discord UID as a valid identifier
+    const identifier = user.email || user.providerData?.[0]?.uid || user.uid;
+    
+    if (!identifier) return false;
+
     try {
-        // Check the 'admins' collection for this email
-        const adminDoc = await getDoc(doc(db, "admins", email));
+        // Check the 'admins' collection for this identifier (either email or UID)
+        const adminDoc = await getDoc(doc(db, "admins", identifier));
         
         if (adminDoc.exists()) {
             return true;
@@ -67,12 +72,12 @@ async function checkAdmin(email) {
         const configDoc = await getDoc(doc(db, "config", "dashboard"));
         if (configDoc.exists()) {
             const data = configDoc.data();
-            const allowedEmails = data.admin_emails || [];
-            return allowedEmails.includes(email);
+            const allowedIds = data.admin_emails || [];
+            return allowedIds.includes(identifier);
         }
 
         // If no admin list exists, allow the first user (bootstrapping)
-        // This will be the initial setup — user should then add their email
+        // This will be the initial setup — user should then add their email or ID
         console.warn("⚠️ No admin list found — allowing first user for initial setup");
         return true;
         
@@ -89,9 +94,9 @@ window.signInWithDiscord = async function() {
     const auth = window.firebaseAuth;
     const provider = new OAuthProvider('discord.com');
     
-    // Scopes for guild and user info if needed later
-    // provider.addScope('identify');
-    // provider.addScope('guilds');
+    // Scopes for guild and user info
+    provider.addScope('identify');
+    provider.addScope('email');
 
     try {
         const result = await signInWithPopup(auth, provider);
