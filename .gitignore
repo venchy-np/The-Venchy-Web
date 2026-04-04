@@ -2,3 +2,13 @@ js/firebase-config.js
 node_modules/
 .DS_Store
 *.log
+
+# Bot-related
+.env
+serviceAccountKey.json
+*serviceAccount*.json
+__pycache__/
+*.pyc
+venv/
+env/
+.venv/

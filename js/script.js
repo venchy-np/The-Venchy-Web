@@ -6,6 +6,12 @@ let isAdmin = false;
 // ---------------------------
 // Unified Auth & State Management
 // ---------------------------
+// Snapshot Unsubscribe Functions
+let unsubscribeProjects = null;
+let unsubscribeThoughts = null;
+let unsubscribeAbout = null;
+let unsubscribePhrases = null;
+
 onAuthStateChanged(auth, (user) => {
     isAdmin = user && user.email === ADMIN_EMAIL;
     console.log("Auth State Changed. Is Admin:", isAdmin);
@@ -21,10 +27,16 @@ onAuthStateChanged(auth, (user) => {
     if (addProjectBtn) addProjectBtn.classList.toggle('hidden', !isAdmin);
     if (editTypewriterBtn) editTypewriterBtn.classList.toggle('hidden', !isAdmin);
 
-    // Refresh Data
+    // Refresh Data (with cleanup)
+    if (unsubscribeProjects) unsubscribeProjects();
+    if (unsubscribeThoughts) unsubscribeThoughts();
+    if (unsubscribeAbout) unsubscribeAbout();
+    if (unsubscribePhrases) unsubscribePhrases();
+
     renderProjects();
     loadThoughts();
     loadAboutSections();
+    loadPhrases(); // Synchronize phrases from DB
 });
 
 // ---------------------------
@@ -36,7 +48,7 @@ function renderProjects() {
     const q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
 
     console.log("Fetching projects...");
-    onSnapshot(q, (snapshot) => {
+    unsubscribeProjects = onSnapshot(q, (snapshot) => {
         grid.innerHTML = '';
         if (snapshot.empty) {
             grid.innerHTML = '<p style="text-align:center; width:100%; opacity:0.6;">No projects yet.</p>';
@@ -108,18 +120,22 @@ function startTypewriterOnce() {
     setTimeout(typeWriter, 1000);
 }
 
+// Sync from DB in background
+function loadPhrases() {
+    if (unsubscribePhrases) unsubscribePhrases();
+    unsubscribePhrases = onSnapshot(doc(db, "settings", "typewriter"), (docSnap) => {
+        if (docSnap.exists() && docSnap.data().phrases && docSnap.data().phrases.length > 0) {
+            phrases = docSnap.data().phrases;
+            console.log("✅ Typewriter Phrases Synced from DB");
+        }
+    }, (err) => {
+        console.warn("⚠️ Firestore phrases blocked. Using defaults.", err);
+    });
+}
+
 // Initialize on Load
 startTypewriterOnce();
-
-// Sync from DB in background
-onSnapshot(doc(db, "settings", "typewriter"), (docSnap) => {
-    if (docSnap.exists() && docSnap.data().phrases && docSnap.data().phrases.length > 0) {
-        phrases = docSnap.data().phrases;
-        console.log("✅ Typewriter Phrases Synced from DB");
-    }
-}, (err) => {
-    console.warn("⚠️ Firestore phrases blocked. Using defaults.", err);
-});
+loadPhrases();
 
 function typeWriter() {
     const textDisplay = document.querySelector('.typewriter-text');
@@ -193,7 +209,7 @@ function loadThoughts() {
     const thoughtsFeed = document.getElementById('thoughts-feed');
     if (!thoughtsFeed) return;
     const q = query(collection(db, "thoughts"), orderBy("createdAt", "desc"), limit(1));
-    onSnapshot(q, (snapshot) => {
+    unsubscribeThoughts = onSnapshot(q, (snapshot) => {
         thoughtsFeed.innerHTML = '';
         if (snapshot.empty) return;
         snapshot.forEach((docSnap) => {
@@ -205,6 +221,8 @@ function loadThoughts() {
             note.innerHTML = `"${data.text}" ${del}`;
             thoughtsFeed.appendChild(note);
         });
+    }, (error) => {
+        console.error("Thoughts Load Error:", error);
     });
 }
 window.deleteThought = async (id) => {
@@ -260,7 +278,7 @@ function loadAboutSections() {
     if (!aboutContent) return;
     
     const q = query(collection(db, "about"), orderBy("createdAt", "asc"));
-    onSnapshot(q, (snapshot) => {
+    unsubscribeAbout = onSnapshot(q, (snapshot) => {
         aboutContent.innerHTML = '';
         if (snapshot.empty) {
             aboutContent.innerHTML = '<p style="opacity:0.6;">No about sections yet.</p>';
@@ -288,6 +306,8 @@ function loadAboutSections() {
             `;
             aboutContent.appendChild(section);
         });
+    }, (error) => {
+        console.error("About Load Error:", error);
     });
 }
 
