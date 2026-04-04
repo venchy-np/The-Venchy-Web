@@ -208,24 +208,41 @@ function loadThoughts() {
     });
 }
 window.deleteThought = async (id) => {
-    if (confirm("Delete this note?")) await deleteDoc(doc(db, "thoughts", id));
+    if (confirm("Delete this note?")) {
+        try {
+            await deleteDoc(doc(db, "thoughts", id));
+        } catch (e) {
+            console.error("Error deleting thought:", e);
+            alert("Error deleting: " + e.message);
+        }
+    }
 };
 
 // Handle Posting Thought
 document.getElementById('post-thought')?.addEventListener('click', async () => {
+    const btn = document.getElementById('post-thought');
     const input = document.getElementById('thought-input');
     const text = input.value.trim();
     if (!text) return;
     
     try {
+        const originalText = btn.innerText;
+        btn.innerText = "...";
+        btn.disabled = true;
+
         await addDoc(collection(db, "thoughts"), {
             text: text,
             createdAt: serverTimestamp()
         });
+        
         input.value = '';
+        btn.innerText = originalText;
+        btn.disabled = false;
     } catch (e) {
         console.error("Error posting thought:", e);
         alert("Error posting thought: " + e.message);
+        btn.innerText = "+";
+        btn.disabled = false;
     }
 });
 
@@ -283,7 +300,14 @@ window.openAboutEditModal = (id, title, content) => {
 };
 
 window.deleteAboutSection = async (id) => {
-    if (confirm("Delete this section?")) await deleteDoc(doc(db, "about", id));
+    if (confirm("Delete this section?")) {
+        try {
+            await deleteDoc(doc(db, "about", id));
+        } catch (e) {
+            console.error("Error deleting section:", e);
+            alert("Error deleting: " + e.message);
+        }
+    }
 };
 
 document.getElementById('add-section-btn')?.addEventListener('click', () => {
@@ -298,6 +322,7 @@ document.getElementById('about-cancel')?.addEventListener('click', () => {
 });
 
 document.getElementById('about-save')?.addEventListener('click', async () => {
+    const btn = document.getElementById('about-save');
     const id = document.getElementById('about-section-id').value;
     const title = document.getElementById('about-title').value.trim();
     const content = document.getElementById('about-content-input').value.trim();
@@ -305,16 +330,25 @@ document.getElementById('about-save')?.addEventListener('click', async () => {
     if (!title || !content) return alert("Title and Content required");
     
     try {
+        const originalText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
         const data = { title, content };
         if (id) {
             await setDoc(doc(db, "about", id), data, { merge: true });
         } else {
             await addDoc(collection(db, "about"), { ...data, createdAt: serverTimestamp() });
         }
+        
+        btn.innerText = originalText;
+        btn.disabled = false;
         document.getElementById('about-modal').classList.add('hidden');
     } catch (e) {
         console.error("Error saving about section:", e);
         alert("Error saving: " + e.message);
+        btn.innerText = "Save Section";
+        btn.disabled = false;
     }
 });
 
@@ -393,38 +427,73 @@ document.getElementById('modal-file')?.addEventListener('change', (e) => {
 // Hook up Add Project Button
 document.getElementById('add-project-btn')?.addEventListener('click', () => openModal(false));
 
+window.deleteProject = async (id) => {
+    if (confirm("Delete this project?")) {
+        try {
+            await deleteDoc(doc(db, "projects", id));
+        } catch (e) {
+            console.error("Error deleting project:", e);
+            alert("Error deleting: " + e.message);
+        }
+    }
+};
+
 document.getElementById('modal-save')?.addEventListener('click', async () => {
+    const btn = document.getElementById('modal-save');
     const id = document.getElementById('modal-project-id').value;
     const title = document.getElementById('modal-title').value.trim();
     if (!title) return alert("Title required");
+    
     const isImage = document.querySelector('input[name="icon-type"][value="image"]').checked;
     let icon = '🚀';
     
-    if (isImage) {
-        // If it's an image, check if we have a new base64 or an existing one from preview
-        const preview = document.getElementById('image-preview');
-        const bg = preview.style.backgroundImage;
-        if (bg && bg.startsWith('url("data:image')) {
-            icon = bg.slice(5, -2); // Extract data URL from url("...")
-        } else if (currentBase64) {
-            icon = currentBase64;
+    try {
+        const originalText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        if (isImage) {
+            const preview = document.getElementById('image-preview');
+            // More robust data URL extraction
+            let bg = preview.style.backgroundImage;
+            if (bg && bg.includes('data:image')) {
+                // Remove url("...") wrapper if present
+                icon = bg.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+            } else if (currentBase64) {
+                icon = currentBase64;
+            } else {
+                alert("Please upload an image or choose emoji");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
         } else {
-            alert("Please upload an image or choose emoji");
-            return;
+            icon = document.getElementById('modal-emoji').value.trim() || '🚀';
         }
-    } else {
-        icon = document.getElementById('modal-emoji').value.trim() || '🚀';
+        
+        const data = {
+            title, 
+            description: document.getElementById('modal-desc').value.trim(),
+            link: document.getElementById('modal-link').value.trim(),
+            icon: icon
+        };
+
+        if (id) {
+            await setDoc(doc(db, "projects", id), data, { merge: true });
+        } else {
+            await addDoc(collection(db, "projects"), { ...data, createdAt: serverTimestamp() });
+        }
+        
+        currentBase64 = null; // Reset
+        btn.innerText = originalText;
+        btn.disabled = false;
+        modal.classList.add('hidden');
+    } catch (e) {
+        console.error("Error saving project:", e);
+        alert("Error saving project: " + e.message);
+        btn.innerText = "Save Project";
+        btn.disabled = false;
     }
-    
-    const data = {
-        title, description: document.getElementById('modal-desc').value.trim(),
-        link: document.getElementById('modal-link').value.trim(),
-        icon: icon
-    };
-    if (id) await setDoc(doc(db, "projects", id), data, { merge: true });
-    else await addDoc(collection(db, "projects"), { ...data, createdAt: serverTimestamp() });
-    currentBase64 = null; // Reset
-    modal.classList.add('hidden');
 });
 document.getElementById('modal-cancel')?.addEventListener('click', () => modal.classList.add('hidden'));
 
@@ -442,19 +511,21 @@ function addPhraseInputRow(val) {
     phrasesList.appendChild(row);
 }
 document.getElementById('typewriter-save')?.addEventListener('click', async () => {
+    const btn = document.getElementById('typewriter-save');
     try {
         const newPhrases = Array.from(phrasesList.querySelectorAll('.phrase-input'))
             .map(i => i.value.trim())
             .filter(v => v);
         
         if (newPhrases.length > 0) {
-            const btn = document.getElementById('typewriter-save');
             const originalText = btn.innerText;
             btn.innerText = "Saving...";
+            btn.disabled = true;
             
             await setDoc(doc(db, "settings", "typewriter"), { phrases: newPhrases }, { merge: true });
             
             btn.innerText = originalText;
+            btn.disabled = false;
             typewriterModal.classList.add('hidden');
         } else {
             alert("Please add at least one phrase!");
@@ -462,6 +533,8 @@ document.getElementById('typewriter-save')?.addEventListener('click', async () =
     } catch (e) {
         console.error("Error saving phrases:", e);
         alert("Error saving phrases: " + e.message);
+        btn.innerText = "Save Phrases";
+        btn.disabled = false;
     }
 });
 

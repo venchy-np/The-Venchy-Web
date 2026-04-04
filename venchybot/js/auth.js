@@ -94,10 +94,12 @@ const DISCORD_CLIENT_ID = "1489277267249987685";
 const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify%20guilds`;
 
-// Placeholder for your Railway bot URL (update this after deployment)
-const BOT_API_URL = window.location.origin.includes('localhost') 
-    ? 'http://localhost:8080' 
-    : 'https://venchy-bot.up.railway.app'; 
+// Automatic backend selection: Use localhost for local dev, Railway for production
+const isLocal = window.location.hostname === "localhost" || 
+                window.location.hostname === "127.0.0.1" || 
+                window.location.hostname.startsWith("192.168.");
+
+const BOT_API_URL = isLocal ? 'http://localhost:8080' : 'https://venchy-bot.up.railway.app'; 
 
 // ── Discord Sign-In (Redirect) ────────────────────────────────
 window.signInWithDiscord = function() {
@@ -140,8 +142,8 @@ async function checkDiscordCallback() {
         console.log("✅ Successfully bridged Discord auth to Firebase");
 
     } catch (error) {
-        console.error("Auth bridge error:", error);
-        showToast("Bot authentication failed: " + error.message, "error");
+        console.error("Auth bridge error detailed:", error);
+        showToast("Bot connection failed: " + error.message, "error");
     }
 }
 
