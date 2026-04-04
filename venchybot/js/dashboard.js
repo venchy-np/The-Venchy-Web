@@ -273,26 +273,20 @@ window.resolveYouTubeChannel = async function () {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finding...';
 
     try {
-        // Step 1: Check if already a UC... ID
-        if (input.startsWith("UC") && input.length >= 24) {
-             // Basic check - we still don't have the name, so let's try to fetch it
-             await finalizeResolution(input, "YouTube Channel (" + input.substring(0, 8) + "...)");
-             return;
+        // Step 1: Detect UC... ID directly
+        const ucMatch = input.match(/UC[a-zA-Z0-9_-]{22}/);
+        if (ucMatch) {
+            const channelId = ucMatch[0];
+            await finalizeResolution(channelId, "YouTube Channel (" + channelId.substring(0, 8) + "...)");
+            return;
         }
 
-        // Step 2: Resolve via public OEmbed / API / Scraper
+        // Step 2: Handle handles (@name) or URLs
         const proxyUrl = "https://api.allorigins.win/get?url=";
         let targetUrl = input;
         
         if (!input.startsWith("http")) {
             targetUrl = input.startsWith("@") ? `https://www.youtube.com/${input}` : `https://www.youtube.com/@${input}`;
-        } else if (input.includes("youtube.com/channel/UC")) {
-             // Already have the URL with ID
-             const idPart = input.match(/UC[a-zA-Z0-9_-]{22}/);
-             if (idPart) {
-                 await finalizeResolution(idPart[0], "Channel " + idPart[0].substring(0,6));
-                 // (Could still fetch metadata for name)
-             }
         }
 
         const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
@@ -302,10 +296,12 @@ window.resolveYouTubeChannel = async function () {
         const html = data.contents;
         if (!html) throw new Error("Could not fetch page contents");
 
-        const idMatch = html.match(/UC[a-zA-Z0-9_-]{22}/);
+        // Look for channelId in various possible places in the HTML
+        const idMatch = html.match(/"channelId":"(UC[a-zA-Z0-9_-]{22})"/ ) || html.match(/UC[a-zA-Z0-9_-]{22}/);
+        
         if (idMatch) {
-            const channelId = idMatch[0];
-            const nameMatch = html.match(/<meta property="og:title" content="([^"]+)">/);
+            const channelId = idMatch[1] || idMatch[0];
+            const nameMatch = html.match(/<meta property="og:title" content="([^"]+)">/) || html.match(/<title>([^<]+) - YouTube<\/title>/);
             const channelName = nameMatch ? nameMatch[1] : `Channel ${channelId.substring(0, 6)}`;
             const thumbMatch = html.match(/<meta property="og:image" content="([^"]+)">/);
             const thumbnail = thumbMatch ? thumbMatch[1] : "";
@@ -318,7 +314,7 @@ window.resolveYouTubeChannel = async function () {
     } catch (error) {
         console.error("Resolution error:", error);
         showToast("Error: " + error.message, "error");
-        // Option to manually enter if it fails
+        // Fallback: manually enter if it fails
         document.getElementById("btn-add-yt").disabled = false;
         document.getElementById("yt-channel-id").value = input;
         document.getElementById("yt-channel-name").value = "Manual Entry";
