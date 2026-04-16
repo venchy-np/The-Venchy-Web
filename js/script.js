@@ -559,27 +559,8 @@ document.getElementById('typewriter-save')?.addEventListener('click', async () =
 });
 
 // ---------------------------
-// Views & Cursor
+// Views
 // ---------------------------
-const curDot = document.getElementById("cursor-dot");
-const curOutline = document.getElementById("cursor-outline");
-if (curDot && window.matchMedia("(pointer: fine)").matches) {
-    let curX = 0, curY = 0, outX = 0, outY = 0;
-    window.addEventListener("mousemove", (e) => {
-        curX = e.clientX; curY = e.clientY;
-        curDot.style.left = curX + "px"; curDot.style.top = curY + "px";
-    });
-    function animate() {
-        outX += (curX - outX) * 0.15; outY += (curY - outY) * 0.15;
-        curOutline.style.left = outX + "px"; curOutline.style.top = outY + "px";
-        requestAnimationFrame(animate);
-    }
-    animate();
-    document.addEventListener("mouseover", (e) => { if (e.target.closest('a, button, .card')) curOutline.classList.add("hover-state"); });
-    document.addEventListener("mouseout", (e) => { if (e.target.closest('a, button, .card')) curOutline.classList.remove("hover-state"); });
-    document.addEventListener("mouseleave", () => { curDot.style.opacity = '0'; curOutline.style.opacity = '0'; });
-    document.addEventListener("mouseenter", () => { curDot.style.opacity = '1'; curOutline.style.opacity = '1'; });
-}
 
 const hView = document.getElementById('home-view');
 const aView = document.getElementById('about-view');
