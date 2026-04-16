@@ -5,6 +5,90 @@
     --msg-received: #3a3a3c;
 }
 
+/* Momo FAB */
+.momo-fab {
+    position: fixed;
+    bottom: 102px; /* sits just above the chat fab (30px bottom + 60px height + 12px gap) */
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff8e7, #ffe0a0);
+    border: none;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 200, 80, 0.5);
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+    animation: momoFloat 3s ease-in-out infinite;
+}
+
+.momo-fab img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.momo-fab:hover {
+    transform: scale(1.15) rotate(8deg);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 190, 60, 0.5);
+}
+
+.momo-fab:hover img {
+    transform: scale(1.08);
+}
+
+.momo-fab:active {
+    transform: scale(0.92);
+}
+
+/* Tooltip */
+.momo-tooltip {
+    position: absolute;
+    right: 72px;
+    top: 50%;
+    transform: translateY(-50%) translateX(6px);
+    background: rgba(20, 20, 20, 0.92);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 200, 80, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.momo-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: rgba(20, 20, 20, 0.92);
+    border-right: none;
+}
+
+.momo-fab:hover .momo-tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+@keyframes momoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
 /* FAB */
 .chat-fab {
     position: fixed;
