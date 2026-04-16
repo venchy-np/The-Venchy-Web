@@ -13,7 +13,7 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #fff8e7, #ffe0a0);
+    background: #1c1c1e;
     border: none;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 200, 80, 0.5);
     cursor: pointer;
