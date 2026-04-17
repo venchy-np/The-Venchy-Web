@@ -564,14 +564,27 @@ document.getElementById('typewriter-save')?.addEventListener('click', async () =
 
 const hView = document.getElementById('home-view');
 const aView = document.getElementById('about-view');
+
 function switchView(v) {
-    hView.classList.toggle('hidden', v !== 'home'); aView.classList.toggle('hidden', v !== 'about');
-    document.getElementById('nav-home').classList.toggle('active', v === 'home');
-    document.getElementById('nav-about').classList.toggle('active', v === 'about');
+    if (!hView || !aView) return;
+    hView.classList.toggle('hidden', v !== 'home'); 
+    aView.classList.toggle('hidden', v !== 'about');
+    document.getElementById('nav-home')?.classList.toggle('active', v === 'home');
+    document.getElementById('nav-about')?.classList.toggle('active', v === 'about');
 }
-document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
-document.getElementById('nav-about').addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
-document.getElementById('nav-projects').addEventListener('click', () => switchView('home'));
+
+if (hView && aView) {
+    document.getElementById('nav-home')?.addEventListener('click', (e) => { 
+        // Only prevent default if we are on the page that uses views
+        e.preventDefault(); 
+        switchView('home'); 
+    });
+    document.getElementById('nav-about')?.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        switchView('about'); 
+    });
+    document.getElementById('nav-projects')?.addEventListener('click', () => switchView('home'));
+}
 
 // Mobile menu toggle
 const menuToggle = document.querySelector('.menu-toggle');

@@ -13,9 +13,9 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: #1c1c1e;
+    background: cyan;
     border: none;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 200, 80, 0.5);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(0, 255, 255, 0.5);
     cursor: pointer;
     z-index: 999;
     display: flex;
@@ -36,7 +36,7 @@
 
 .momo-fab:hover {
     transform: scale(1.15) rotate(8deg);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 190, 60, 0.5);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.5);
 }
 
 .momo-fab:hover img {
