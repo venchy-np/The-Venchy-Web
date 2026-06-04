@@ -33,13 +33,23 @@
     });
 
     function animate() {
-        outX += (curX - outX) * 0.15;
-        outY += (curY - outY) * 0.15;
+        outX += (curX - outX) * 0.2; // Slightly faster follow
+        outY += (curY - outY) * 0.2;
         curOutline.style.left = outX + "px";
         curOutline.style.top = outY + "px";
         requestAnimationFrame(animate);
     }
     animate();
+
+    // Click effect
+    document.addEventListener("mousedown", () => {
+        curDot.classList.add("click-state");
+        curOutline.style.transform = "translate(-50%, -50%) scale(0.8)";
+    });
+    document.addEventListener("mouseup", () => {
+        curDot.classList.remove("click-state");
+        curOutline.style.transform = "translate(-50%, -50%) scale(1)";
+    });
 
     document.addEventListener("mouseover", (e) => {
         if (e.target.closest("a, button, .card, [role='button']")) {

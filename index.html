@@ -12,6 +12,7 @@
     <meta property="og:url" content="https://venchy-np.github.io/The-Venchy-Web/">
     <meta property="og:title" content="Sajan Dahal's Portfolio">
     <meta property="og:description" content="Sajan Dahal's Portfolio , i guess.">
+    <meta name="description" content="Sajan Dahal's Portfolio website showcasing projects, experiences, and thoughts.">
     <meta property="og:image" content="https://venchy-np.github.io/The-Venchy-Web/img/background.jpg">
 
     <!-- Twitter -->
@@ -22,12 +23,14 @@
     <meta property="twitter:image" content="https://venchy-np.github.io/The-Venchy-Web/img/background.jpg">
 
     <link rel="stylesheet" href="css/style.css?v=1.2">
+    <link rel="stylesheet" href="css/chat.css?v=1.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+    <a href="#main-content" style="position:absolute; top:-40px; left:0; background:var(--accent-primary); color:#fff; padding:8px 16px; z-index:1000; border-radius:4px; font-weight:600;" onfocus="this.style.top='10px'" onblur="this.style.top='-40px'">Skip to content</a>
     <div class="background-gradient"></div>
 
     <header class="glass-header">
@@ -96,13 +99,14 @@
     <main>
         <!-- Home View -->
         <div id="home-view" class="view-section">
-            <section class="hero">
-                <h1 class="fade-in">Welcome.</h1>
-                <p class="fade-in delay-1" style="position: relative; display: inline-block;">
-                    <span class="typewriter-text"></span><span class="typewriter-cursor">|</span>
-                    <button id="edit-typewriter-btn" class="project-edit-btn hidden" style="position: absolute; right: -40px; top: 0;" title="Edit Phrases">✎</button>
-                </p>
-            </section>
+            <main id="main-content">
+                <section class="hero reveal">
+                    <h1>Welcome.</h1>
+                    <p style="position: relative; display: inline-block;">
+                        <span class="typewriter-text"></span><span class="typewriter-cursor">|</span>
+                        <button id="edit-typewriter-btn" class="project-edit-btn hidden" style="position: absolute; right: -40px; top: 0;" title="Edit Phrases">✎</button>
+                    </p>
+                </section>
 
             <!-- Notes Bubble (Left of Header) -->
             <div id="notes-container" class="notes-bubble-container">
@@ -118,14 +122,15 @@
             </div>
 
             <!-- Projects Header & Admin Controls -->
-            <div class="projects-header">
-                <button id="add-project-btn" class="action-btn hidden" style="margin: 20px auto; display: block;">+ Add
-                    Project</button>
+            <div class="projects-header reveal delay-1">
+                <h2 style="font-family: var(--font-display); font-size: 2rem;">Featured Projects</h2>
+                <button id="add-project-btn" class="action-btn hidden">+ Add Project</button>
             </div>
 
-            <section class="grid-container" id="projects-grid">
+            <section class="grid-container reveal delay-2" id="projects-grid">
                 <!-- Projects render here -->
             </section>
+            </main>
         </div>
 
         <!-- About View -->
@@ -277,7 +282,7 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="css/chat.css?v=1.2">
+    <script src="js/cursor.js"></script>
     <script src="js/cursor.js"></script>
     <script type="module" src="js/script.js?v=1.2"></script>
     <script type="module" src="js/chat.js?v=1.2"></script>
@@ -374,6 +379,6 @@
     <div id="cursor-outline" class="cursor-outline"></div>
 
     <!-- Vanilla Tilt for 3D Cards -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js" defer></script>
 </body>
 </html>

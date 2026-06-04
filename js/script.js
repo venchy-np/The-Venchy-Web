@@ -199,8 +199,19 @@ async function fetchDiscordStatus() {
         text.classList.remove('hidden');
     } catch (e) { console.error("Discord Load Error:", e); }
 }
+
 fetchDiscordStatus();
-setInterval(fetchDiscordStatus, 15000);
+let discordInterval = setInterval(fetchDiscordStatus, 15000);
+
+// Optimize polling with Visibility API
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        clearInterval(discordInterval);
+    } else {
+        fetchDiscordStatus();
+        discordInterval = setInterval(fetchDiscordStatus, 15000);
+    }
+});
 
 // ---------------------------
 // Thoughts Feature
@@ -288,7 +299,7 @@ function loadAboutSections() {
             const data = docSnap.data();
             const id = docSnap.id;
             const section = document.createElement('div');
-            section.className = 'about-card fade-in';
+            section.className = 'about-section-card reveal delay-1';
             
             let adminHtml = '';
             if (isAdmin) {
@@ -559,31 +570,88 @@ document.getElementById('typewriter-save')?.addEventListener('click', async () =
 });
 
 // ---------------------------
-// Views
+// Views & Animations
 // ---------------------------
 
 const hView = document.getElementById('home-view');
 const aView = document.getElementById('about-view');
 
 function switchView(v) {
-    if (!hView || !aView) return;
-    hView.classList.toggle('hidden', v !== 'home'); 
-    aView.classList.toggle('hidden', v !== 'about');
-    document.getElementById('nav-home')?.classList.toggle('active', v === 'home');
-    document.getElementById('nav-about')?.classList.toggle('active', v === 'about');
+    const fadeOutTarget = v === 'home' ? aView : hView;
+    const fadeInTarget = v === 'home' ? hView : aView;
+    
+    // Smooth transition
+    fadeOutTarget.style.opacity = '0';
+    setTimeout(() => {
+        fadeOutTarget.classList.add('hidden');
+        fadeInTarget.classList.remove('hidden');
+        
+        // Force reflow
+        void fadeInTarget.offsetWidth;
+        
+        fadeInTarget.style.opacity = '1';
+        
+        // Re-trigger scroll animations for the new view
+        initScrollAnimations();
+    }, 300);
+
+    document.getElementById('nav-home').classList.toggle('active', v === 'home');
+    document.getElementById('nav-about').classList.toggle('active', v === 'about');
 }
 
-if (hView && aView) {
-    document.getElementById('nav-home')?.addEventListener('click', (e) => { 
-        // Only prevent default if we are on the page that uses views
-        e.preventDefault(); 
-        switchView('home'); 
+// Ensure elements have transition applied for smooth view switches
+if (hView) hView.style.transition = 'opacity 0.3s ease';
+if (aView) aView.style.transition = 'opacity 0.3s ease';
+
+document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+document.getElementById('nav-about').addEventListener('click', (e) => { e.preventDefault(); switchView('about'); });
+document.getElementById('nav-projects').addEventListener('click', () => switchView('home'));
+
+// ---------------------------
+// Scroll Reveal Animations
+// ---------------------------
+function initScrollAnimations() {
+    const reveals = document.querySelectorAll('.reveal:not(.revealed)');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px"
     });
-    document.getElementById('nav-about')?.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        switchView('about'); 
+
+    reveals.forEach(element => {
+        observer.observe(element);
     });
-    document.getElementById('nav-projects')?.addEventListener('click', () => switchView('home'));
+    
+    // Auto-reveal elements currently in viewport on load
+    setTimeout(() => {
+        reveals.forEach(element => {
+            const rect = element.getBoundingClientRect();
+            if (rect.top < window.innerHeight) {
+                element.classList.add('revealed');
+            }
+        });
+    }, 100);
+}
+
+// Initialize on DOM Load
+document.addEventListener('DOMContentLoaded', initScrollAnimations);
+// Also initialize after Firebase renders items
+const originalRenderProjectCard = renderProjectCard;
+window.renderProjectCard = function(id, data) {
+    originalRenderProjectCard(id, data);
+    const card = document.getElementById(`project-${id}`);
+    if (card) {
+        card.classList.replace('fade-in', 'reveal');
+        card.classList.add('delay-1');
+        initScrollAnimations();
+    }
 }
 
 // Mobile menu toggle
